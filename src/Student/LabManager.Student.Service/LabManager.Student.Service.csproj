@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-LabManager.Student.Service-c38d3098-77ea-450e-9f32-8a8ea269eaa4</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LabManager.Student.Core\LabManager.Student.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Core\LabManager.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Protocol\LabManager.Protocol.csproj" />
+  </ItemGroup>
+</Project>

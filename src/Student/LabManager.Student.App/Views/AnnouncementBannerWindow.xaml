@@ -1,0 +1,75 @@
+<Window x:Class="LabManager.Student.App.Views.AnnouncementBannerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Thông báo từ Giáo viên"
+        Width="720" SizeToContent="Height"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        WindowStartupLocation="Manual">
+
+    <Window.Resources>
+        <DropShadowEffect x:Key="BannerShadow" BlurRadius="24" ShadowDepth="4" Opacity="0.55" Color="#000000"/>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Border Background="#0F172A" BorderBrush="#F59E0B" BorderThickness="2" CornerRadius="16"
+                Effect="{StaticResource BannerShadow}" Padding="20,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Icon Banner -->
+                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" 
+                            Background="#78350F" BorderBrush="#F59E0B" BorderThickness="1.5"
+                            VerticalAlignment="Top" Margin="0,0,16,0">
+                        <TextBlock Text="📢" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Message Body -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="THÔNG BÁO TỪ GIÁO VIÊN" FontWeight="Bold" FontSize="13" Foreground="#F59E0B"/>
+                            <TextBlock Text=" • " Foreground="#64748B" FontSize="13"/>
+                            <TextBlock x:Name="TxtSender" Text="Giáo viên" FontWeight="SemiBold" FontSize="13" Foreground="#E2E8F0"/>
+                            <TextBlock x:Name="TxtTime" Text=" (10:30)" FontSize="12" Foreground="#94A3B8"/>
+                            <TextBlock Text=" • v1.3.2" FontSize="11" Foreground="#78350F" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="TxtContent" 
+                                   Text="Cả lớp chú ý theo dõi bài tập trên máy giáo viên!" 
+                                   Foreground="#F8FAFC" FontSize="15" FontWeight="Medium"
+                                   TextWrapping="Wrap" LineHeight="22" Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <!-- Countdown Badge -->
+                    <Border Grid.Column="2" Background="#1E293B" BorderBrush="#F59E0B" BorderThickness="1"
+                            CornerRadius="20" Padding="12,6" VerticalAlignment="Top">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="⏳ " FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TxtCountdown" Text="10s" 
+                                       Foreground="#FDE68A" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Remaining Progress Bar -->
+                <ProgressBar Grid.Row="1" x:Name="ProgCountdown" Height="4" Margin="0,14,0,0"
+                             Foreground="#F59E0B" Background="#334155" BorderThickness="0"
+                             Minimum="0" Maximum="100" Value="100"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\LabManager.Core\LabManager.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Protocol\LabManager.Protocol.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Network\LabManager.Network.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Native\LabManager.Native.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

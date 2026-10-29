@@ -1,0 +1,42 @@
+<Window x:Class="LabManager.Student.App.Views.FullscreenLockOverlay"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Màn hình bị khóa"
+        WindowStyle="None"
+        WindowState="Maximized"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Background="#0B0F19">
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+        <Border Background="#1E293B" CornerRadius="16" Padding="50,40" BorderBrush="#334155" BorderThickness="1">
+            <StackPanel HorizontalAlignment="Center" Width="550">
+                <!-- Icon -->
+                <TextBlock Text="🔒" FontSize="72" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                <!-- Title -->
+                <TextBlock Text="MÁY TÍNH ĐANG BỊ KHÓA" 
+                           Foreground="#EF4444" FontWeight="Bold" FontSize="26" 
+                           HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                <!-- Custom Message -->
+                <TextBlock x:Name="TxtMessage" Text="Học sinh chú ý theo dõi bài giảng của giáo viên." 
+                           Foreground="#E2E8F0" FontSize="16" TextWrapping="Wrap"
+                           TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,25"/>
+
+                <!-- Divider -->
+                <Border Height="1" Background="#334155" Margin="0,0,0,20"/>
+
+                <!-- Machine Info -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock x:Name="TxtMachineInfo" Text="Máy tính phòng máy" Foreground="#64748B" FontSize="13"/>
+                    <TextBlock Text=" • LabManager v1.3.2" Foreground="#475569" FontSize="13"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

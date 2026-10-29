@@ -1,0 +1,21 @@
+## Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+dist/
+
+## Visual Studio / IDE
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Temporary / Logs
+*.log
+*.tmp
+TestResults/

@@ -1,0 +1,139 @@
+<Window x:Class="LabManager.Teacher.App.Views.TeacherChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}" Height="540" Width="480"
+        WindowStartupLocation="CenterOwner"
+        Background="#F8FAFC" Foreground="#1E293B">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- TOP BAR: TITLE & QUICK ACTION -->
+        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="#0284C7" VerticalAlignment="Center"/>
+
+                <!-- Nút đóng bảng chat phía học sinh -->
+                <Button Grid.Column="1" Content="🚫 Đóng chat máy HS" Command="{Binding CloseStudentChatCommand}"
+                        Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1" Foreground="#475569" FontWeight="SemiBold" FontSize="11"
+                        Padding="10,5" Cursor="Hand"
+                        ToolTip="Gửi lệnh đóng/ẩn bảng chat trên máy học sinh">
+                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- CONFIGURATION PANEL: CHẾ ĐỘ THÔNG BÁO & QUYỀN HỌC SINH -->
+        <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,0,0,10">
+            <StackPanel>
+                <!-- Hàng 1: Loại tin nhắn & Thời gian tồn tại -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox Grid.Column="0" IsChecked="{Binding IsAnnouncement}"
+                              Foreground="#D97706" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"
+                              ToolTip="Nổi phía trên màn hình học sinh, không thể tắt, tự biến mất sau số giây quy định">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📢 Thông báo nổi màn hình (Không thể tắt)"/>
+                        </StackPanel>
+                    </CheckBox>
+
+                    <!-- Chọn số giây tồn tại -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsAnnouncement}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="Thời gian:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox ItemsSource="{Binding DurationOptions}" SelectedItem="{Binding DurationSeconds}"
+                                  Width="55" Height="24" Background="#FFFFFF" Foreground="#0F172A" BorderBrush="#CBD5E1" FontSize="11"/>
+                        <TextBlock Text="giây" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Hàng 2: Tùy chọn kiểm soát bảng chat học sinh -->
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox IsChecked="{Binding AllowCloseChat}" Margin="0,0,16,0"
+                              Foreground="#475569" FontSize="11" VerticalAlignment="Center"
+                              Content="Cho phép học sinh tắt bảng chat"
+                              ToolTip="Nếu bỏ chọn, học sinh không thể tắt hoặc ẩn bảng chat"/>
+
+                    <CheckBox IsChecked="{Binding AllowStudentReply}"
+                              Foreground="#475569" FontSize="11" VerticalAlignment="Center"
+                              Content="Cho phép học sinh nhắn tin lại"
+                              ToolTip="Nếu bỏ chọn, học sinh chỉ đọc được tin nhắn, không thể gõ gửi lại"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- MESSAGES LIST -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10">
+            <ItemsControl ItemsSource="{Binding Messages}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,4" Padding="10,8" CornerRadius="8" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding SenderName}" FontWeight="Bold" FontSize="11" Foreground="#0284C7"/>
+                                        <TextBlock Text="{Binding TimeFormatted, StringFormat=' ({0})'}" FontSize="10" Foreground="#94A3B8"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontSize="13" Foreground="#0F172A"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- INPUT AREA -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                     Background="#FFFFFF" Foreground="#0F172A" BorderBrush="#CBD5E1" Padding="10,8"
+                     FontSize="12" VerticalAlignment="Center"/>
+
+            <Button Grid.Column="1" Command="{Binding SendCommand}"
+                    FontWeight="Bold" Padding="16,8" Margin="8,0,0,0" Cursor="Hand" BorderThickness="0">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Content" Value="Gửi tin"/>
+                        <Setter Property="Background" Value="#2563EB"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAnnouncement}" Value="True">
+                                <Setter Property="Content" Value="📢 Gửi thông báo"/>
+                                <Setter Property="Background" Value="#D97706"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+    </Grid>
+</Window>

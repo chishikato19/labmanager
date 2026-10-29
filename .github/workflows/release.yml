@@ -1,0 +1,104 @@
+name: Build & Release Installers
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger khi push tag như v1.3.3, v1.4.0
+  workflow_dispatch: # Cho phép trigger thủ công trên GitHub UI
+
+jobs:
+  build-and-release:
+    name: Build & Release Windows Installers
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine Version
+        id: version_step
+        shell: pwsh
+        run: |
+          $ref = $env:GITHUB_REF_NAME
+          if ($ref -like "v*") {
+              $ver = $ref.Substring(1)
+          } else {
+              $ver = "1.3.3"
+          }
+          echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+          Write-Host "Releasing version: $ver"
+
+      - name: Restore Dependencies
+        run: dotnet restore LabManager.sln
+
+      # 1. Publish Teacher App
+      - name: Publish Teacher App
+        run: >
+          dotnet publish src/Teacher/LabManager.Teacher.App/LabManager.Teacher.App.csproj 
+          -c Release 
+          -r win-x64 
+          --self-contained true 
+          -o publish/teacher 
+          /p:Version=${{ steps.version_step.outputs.VERSION }}
+          /p:AssemblyVersion=${{ steps.version_step.outputs.VERSION }}.0
+          /p:FileVersion=${{ steps.version_step.outputs.VERSION }}.0
+
+      # 2. Publish Student App
+      - name: Publish Student App
+        run: >
+          dotnet publish src/Student/LabManager.Student.App/LabManager.Student.App.csproj 
+          -c Release 
+          -r win-x64 
+          --self-contained true 
+          -o publish/student 
+          /p:Version=${{ steps.version_step.outputs.VERSION }}
+          /p:AssemblyVersion=${{ steps.version_step.outputs.VERSION }}.0
+          /p:FileVersion=${{ steps.version_step.outputs.VERSION }}.0
+
+      # 3. Cài đặt Inno Setup
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress
+
+      # 4. Biên dịch bộ cài đặt .exe
+      - name: Compile Inno Setup Installers
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          $ver = "${{ steps.version_step.outputs.VERSION }}"
+          
+          Write-Host "Compiling Teacher Setup..."
+          & $iscc /DMyAppVersion="$ver" /O"dist" installers/TeacherSetup.iss
+          
+          Write-Host "Compiling Student Setup..."
+          & $iscc /DMyAppVersion="$ver" /O"dist" installers/StudentSetup.iss
+
+      # 5. Tính checksum SHA256
+      - name: Generate Checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path dist -Filter *.exe | ForEach-Object {
+              $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+              "$hash  $($_.Name)" | Out-File -Append -FilePath dist/checksums.txt -Encoding ascii
+          }
+          Get-Content dist/checksums.txt
+
+      # 6. Tạo GitHub Release và upload assets
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+            dist/checksums.txt
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true

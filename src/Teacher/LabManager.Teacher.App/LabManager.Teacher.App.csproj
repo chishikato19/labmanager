@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LabManager.Teacher.Core\LabManager.Teacher.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Core\LabManager.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Protocol\LabManager.Protocol.csproj" />
+    <ProjectReference Include="..\..\Shared\LabManager.Network\LabManager.Network.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+</Project>
