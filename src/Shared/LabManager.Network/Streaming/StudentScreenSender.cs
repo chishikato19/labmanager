@@ -78,11 +78,11 @@ public class StudentScreenSender : IDisposable
                 bool isHighDef = _isRemoteControlMode || _isFocusMode;
 
                 // Khi giáo viên chỉ chuột vào màn hình học sinh hoặc đang Điều khiển từ xa:
-                // Độ phân giải GỐC / Native (targetWidth = null để ảnh cực nét, không resize, đọc rõ từng chữ/dòng code), chất lượng 80%, 20 FPS (50ms)
+                // Độ phân giải GỐC / Native (targetWidth = null để ảnh cực nét, không resize, đọc rõ từng chữ/dòng code), chất lượng 88%, 20 FPS (50ms)
                 // Khi ở chế độ giám sát ngầm: 640x360, chất lượng 60%, 2 FPS (500ms) để tối ưu băng thông phòng máy
                 int? targetW = isHighDef ? null : 640;
                 int? targetH = isHighDef ? null : 360;
-                int quality = isHighDef ? 80 : 60;
+                int quality = isHighDef ? 88 : 60;
                 int sleepMs = isHighDef ? 50 : baseIntervalMs;
 
                 byte[]? jpegBytes = _capturer.CaptureFrameJpeg(quality: quality, targetWidth: targetW, targetHeight: targetH);
@@ -90,8 +90,10 @@ public class StudentScreenSender : IDisposable
                 {
                     uint frameId = unchecked(++_frameIdCounter);
                     ushort chunkCount = (ushort)Math.Ceiling((double)jpegBytes.Length / ChunkDataSize);
-                    ushort actualW = (ushort)(targetW ?? 1920);
-                    ushort actualH = (ushort)(targetH ?? 1080);
+                    int nativeW = _capturer.ScreenWidth > 0 ? _capturer.ScreenWidth : 1920;
+                    int nativeH = _capturer.ScreenHeight > 0 ? _capturer.ScreenHeight : 1080;
+                    ushort actualW = (ushort)(targetW ?? nativeW);
+                    ushort actualH = (ushort)(targetH ?? nativeH);
 
                     for (ushort i = 0; i < chunkCount; i++)
                     {

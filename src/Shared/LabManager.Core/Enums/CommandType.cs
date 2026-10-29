@@ -26,6 +26,7 @@ public enum CommandType : ushort
     ChatMessage = 410,
     DeploySoftware = 420,
     DeploySoftwareStatus = 421,
+    DriveSecurityControl = 430,
 
     // Giám sát hoạt động
     ProcessControl = 500,

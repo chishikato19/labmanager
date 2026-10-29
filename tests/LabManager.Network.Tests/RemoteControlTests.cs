@@ -45,7 +45,9 @@ public class RemoteControlTests
         var packet = new RemoteSessionPacket
         {
             Start = true,
-            TeacherIp = "192.168.1.100"
+            TeacherIp = "192.168.1.100",
+            HighQualityFocus = true,
+            IsControlSession = true
         };
 
         byte[] bytes = PacketSerializer.Serialize(CommandType.RemoteSession, packet);
@@ -57,5 +59,7 @@ public class RemoteControlTests
         Assert.NotNull(deserialized);
         Assert.True(deserialized.Start);
         Assert.Equal("192.168.1.100", deserialized.TeacherIp);
+        Assert.True(deserialized.HighQualityFocus);
+        Assert.True(deserialized.IsControlSession);
     }
 }

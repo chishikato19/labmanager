@@ -29,6 +29,7 @@ public class StudentCoordinator : IDisposable
     private readonly AppUpdateHandler _updateHandler = new();
     private readonly WallpaperHandler _wallpaperHandler = new();
     private readonly DeploySoftwareHandler _deployHandler = new();
+    private readonly DriveSecurityHandler _driveSecurityHandler = new();
     private readonly string _machineId = Guid.NewGuid().ToString("N");
     private string? _currentTeacherIp;
     private bool _isDisposed;
@@ -271,6 +272,14 @@ public class StudentCoordinator : IDisposable
                 _ = Task.Run(() => _deployHandler.HandleDeployAsync(deployCmd, _machineId));
             }
         }
+        else if (header.Type == CommandType.DriveSecurityControl)
+        {
+            var driveCmd = PacketSerializer.DeserializePayload<DriveSecurityPacket>(payload, 0, payload.Length);
+            if (driveCmd != null)
+            {
+                return _driveSecurityHandler.HandleAsync(driveCmd);
+            }
+        }
 
         return Task.CompletedTask;
     }
@@ -287,15 +296,14 @@ public class StudentCoordinator : IDisposable
         {
             _screenSender.SetRemoteControlMode(true);
         }
-        else if (sessionCmd.HighQualityFocus)
+        else if (sessionCmd.IsControlSession)
         {
-            _screenSender.SetFocusMode(true);
-        }
-        else
-        {
+            // Chỉ tắt chế độ điều khiển khi chính giáo viên đóng cửa sổ điều khiển từ xa
             _screenSender.SetRemoteControlMode(false);
-            _screenSender.SetFocusMode(false);
         }
+
+        // Tín hiệu Hover/Focus chỉ quản lý FocusMode, độc lập hoàn toàn với RemoteControlMode
+        _screenSender.SetFocusMode(sessionCmd.HighQualityFocus);
     }
 
     public async Task SendChatMessageAsync(string content)

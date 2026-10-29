@@ -8,6 +8,10 @@ namespace LabManager.Teacher.App.Views;
 public partial class RemoteControlWindow : Window
 {
     private readonly RemoteControlViewModel _viewModel;
+    private bool _isFullscreen;
+    private WindowState _savedWindowState = WindowState.Normal;
+    private WindowStyle _savedWindowStyle = WindowStyle.SingleBorderWindow;
+    private ResizeMode _savedResizeMode = ResizeMode.CanResize;
 
     public RemoteControlWindow(RemoteControlViewModel viewModel)
     {
@@ -17,6 +21,35 @@ public partial class RemoteControlWindow : Window
         Closed += (_, _) => _viewModel.Dispose();
         PreviewKeyDown += OnWindowKeyDown;
         PreviewKeyUp += OnWindowKeyUp;
+    }
+
+    public void ToggleFullscreen()
+    {
+        if (!_isFullscreen)
+        {
+            _savedWindowState = WindowState;
+            _savedWindowStyle = WindowStyle;
+            _savedResizeMode = ResizeMode;
+
+            WindowStyle = WindowStyle.None;
+            ResizeMode = ResizeMode.NoResize;
+            WindowState = WindowState.Maximized;
+            _isFullscreen = true;
+            BtnFullscreen.Content = "🗗 Thu nhỏ (F11)";
+        }
+        else
+        {
+            WindowStyle = _savedWindowStyle;
+            ResizeMode = _savedResizeMode;
+            WindowState = _savedWindowState;
+            _isFullscreen = false;
+            BtnFullscreen.Content = "⛶ Toàn màn hình (F11)";
+        }
+    }
+
+    private void BtnFullscreen_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleFullscreen();
     }
 
     private (double X, double Y)? GetNormalizedCoordinates(MouseEventArgs e)
@@ -85,6 +118,13 @@ public partial class RemoteControlWindow : Window
 
     private void OnWindowKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.F11)
+        {
+            ToggleFullscreen();
+            e.Handled = true;
+            return;
+        }
+
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
         int vk = KeyInterop.VirtualKeyFromKey(key);
         if (vk > 0)

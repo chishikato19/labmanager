@@ -183,6 +183,15 @@
                                           Command="{Binding PlacementTarget.Tag.SetWallpaperCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           ToolTip="Chọn tệp ảnh (.jpg, .png) và áp dụng làm hình nền Desktop máy học sinh ngay lập tức"
                                           Foreground="#B45309"/>
+                                <Separator/>
+                                <MenuItem Header="🔒 Khóa ổ D (Chỉ cho lưu trong thư mục có sẵn)"
+                                          Command="{Binding PlacementTarget.Tag.LockDriveDCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          ToolTip="Khóa ổ D: Cấm tạo/xóa/đổi tên thư mục có sẵn, cấm lưu file trực tiếp ra ổ D, cho phép làm bài thoải mái trong các thư mục đã tạo"
+                                          Foreground="#B91C1C"/>
+                                <MenuItem Header="🔓 Mở khóa ổ D"
+                                          Command="{Binding PlacementTarget.Tag.UnlockDriveDCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          ToolTip="Mở khóa ổ D để trả lại quyền bình thường cho học sinh"
+                                          Foreground="#047857"/>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
@@ -443,6 +452,13 @@
                                     <MenuItem Header="🚀 Cập nhật phiên bản máy này (Git/LAN)..." 
                                               Command="{Binding PlacementTarget.Tag.OpenUpdateManagerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding}" Foreground="#7E22CE"/>
+                                     <Separator/>
+                                     <MenuItem Header="🔒 Khóa ổ D máy này" 
+                                               Command="{Binding PlacementTarget.Tag.LockStudentDriveDCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                               CommandParameter="{Binding}" Foreground="#DC2626"/>
+                                     <MenuItem Header="🔓 Mở khóa ổ D máy này" 
+                                               Command="{Binding PlacementTarget.Tag.UnlockStudentDriveDCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                               CommandParameter="{Binding}" Foreground="#059669"/>
                                     <Separator/>
                                     <MenuItem Header="◀ Chuyển vị trí sang trái" 
                                               Command="{Binding PlacementTarget.Tag.MoveStudentLeftCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"

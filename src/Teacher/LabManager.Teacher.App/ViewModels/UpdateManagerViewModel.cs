@@ -17,7 +17,7 @@ public class UpdateStudentTargetItemViewModel : ViewModelBase
     public string MachineId { get; set; } = string.Empty;
     public string MachineName { get; set; } = string.Empty;
     public string IpAddress { get; set; } = string.Empty;
-    public string AppVersion { get; set; } = "1.3.3";
+    public string AppVersion { get; set; } = "1.3.4";
 
     public bool IsSelected
     {
@@ -249,7 +249,7 @@ public class UpdateManagerViewModel : ViewModelBase
 
         // Xác định version hiện tại của ứng dụng Giáo viên
         var ver = Assembly.GetExecutingAssembly().GetName().Version;
-        CurrentTeacherVersion = ver != null ? $"v{ver.Major}.{ver.Minor}.{ver.Build}" : "v1.3.3";
+        CurrentTeacherVersion = ver != null ? $"v{ver.Major}.{ver.Minor}.{ver.Build}" : "v1.3.4";
 
         var selectedIpsSet = initialSelectedIps?.ToHashSet(StringComparer.OrdinalIgnoreCase);
 

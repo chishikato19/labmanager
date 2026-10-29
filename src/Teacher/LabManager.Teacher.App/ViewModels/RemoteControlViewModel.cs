@@ -41,6 +41,29 @@ public class RemoteControlViewModel : ViewModelBase, IDisposable
 
     public bool HasScreen => CurrentScreen != null;
 
+    private string _resolutionText = "Đang nhận dạng...";
+    public string ResolutionText
+    {
+        get => _resolutionText;
+        private set => SetProperty(ref _resolutionText, value);
+    }
+
+    private System.Windows.Media.BitmapScalingMode _scalingMode = System.Windows.Media.BitmapScalingMode.Linear;
+    public System.Windows.Media.BitmapScalingMode ScalingMode
+    {
+        get => _scalingMode;
+        set
+        {
+            if (SetProperty(ref _scalingMode, value))
+            {
+                OnPropertyChanged(nameof(ScalingModeText));
+            }
+        }
+    }
+
+    public string ScalingModeText => ScalingMode == System.Windows.Media.BitmapScalingMode.Linear ? "🔤 Chữ sắc nét" : "✨ Mượt mà";
+    public RelayCommand ToggleScalingModeCommand { get; }
+
     public string Status
     {
         get => _status;
@@ -60,6 +83,12 @@ public class RemoteControlViewModel : ViewModelBase, IDisposable
         _manager = manager;
 
         ToggleBroadcastThisStudentCommand = new RelayCommand(async () => await ToggleBroadcastThisStudentAsync());
+        ToggleScalingModeCommand = new RelayCommand(() =>
+        {
+            ScalingMode = ScalingMode == System.Windows.Media.BitmapScalingMode.Linear
+                ? System.Windows.Media.BitmapScalingMode.HighQuality
+                : System.Windows.Media.BitmapScalingMode.Linear;
+        });
 
         string cleanStudentIp = _studentIp.StartsWith("::ffff:") ? _studentIp[7..] : _studentIp;
         if (IPAddress.TryParse(cleanStudentIp, out var ip))
@@ -113,6 +142,7 @@ public class RemoteControlViewModel : ViewModelBase, IDisposable
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
                 CurrentScreen = bmp;
+                ResolutionText = $"{bmp.PixelWidth} × {bmp.PixelHeight} Native";
             });
         }
         catch { }

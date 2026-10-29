@@ -165,6 +165,10 @@ public class DashboardViewModel : ViewModelBase, IDisposable
     public RelayCommand SetStudentWallpaperCommand { get; }
     public RelayCommand DeploySoftwareCommand { get; }
     public RelayCommand DeployStudentSoftwareCommand { get; }
+    public RelayCommand LockDriveDCommand { get; }
+    public RelayCommand UnlockDriveDCommand { get; }
+    public RelayCommand LockStudentDriveDCommand { get; }
+    public RelayCommand UnlockStudentDriveDCommand { get; }
 
     public DashboardViewModel()
     {
@@ -215,6 +219,10 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         SetStudentWallpaperCommand = new RelayCommand(async param => await SetWallpaperAsync(param as StudentCardViewModel));
         DeploySoftwareCommand = new RelayCommand(() => OpenDeploySoftwareDialog());
         DeployStudentSoftwareCommand = new RelayCommand(param => OpenDeploySoftwareDialog(param as StudentCardViewModel));
+        LockDriveDCommand = new RelayCommand(async () => await SetDriveSecuritySelectedOrAllAsync(DriveSecurityAction.LockDrive));
+        UnlockDriveDCommand = new RelayCommand(async () => await SetDriveSecuritySelectedOrAllAsync(DriveSecurityAction.UnlockDrive));
+        LockStudentDriveDCommand = new RelayCommand(async param => await SetDriveSecurityStudentAsync(param as StudentCardViewModel, DriveSecurityAction.LockDrive));
+        UnlockStudentDriveDCommand = new RelayCommand(async param => await SetDriveSecurityStudentAsync(param as StudentCardViewModel, DriveSecurityAction.UnlockDrive));
 
         _classroomManager.OnFileCollected += (submission, savePath) =>
         {
@@ -385,6 +393,32 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         bool success = await _classroomManager.SendLockCommandAsync(student.IpAddress, targetLock, targetLock);
         if (success)
             student.Status = targetLock ? MachineStatus.Locked : MachineStatus.Online;
+    }
+
+    private async Task SetDriveSecuritySelectedOrAllAsync(DriveSecurityAction action)
+    {
+        var targets = Students.Where(s => s.IsSelected && s.IsOnline).ToList();
+        var targetIps = targets.Count > 0 ? targets.Select(s => s.IpAddress).ToList() : null;
+
+        int count = await _classroomManager.SetDriveSecurityAsync(action, @"D:\", targetIps);
+        string actionText = action == DriveSecurityAction.LockDrive
+            ? "khóa cấu trúc ổ D (chỉ cho phép làm bài trong các thư mục có sẵn)"
+            : "mở khóa ổ D";
+
+        StatusMessage = targets.Count > 0
+            ? $"Đã {actionText} trên {count}/{targets.Count} máy đã chọn."
+            : $"Đã {actionText} trên {count} máy toàn phòng học.";
+    }
+
+    private async Task SetDriveSecurityStudentAsync(StudentCardViewModel? student, DriveSecurityAction action)
+    {
+        if (student == null || string.IsNullOrWhiteSpace(student.IpAddress)) return;
+
+        int count = await _classroomManager.SetDriveSecurityAsync(action, @"D:\", new[] { student.IpAddress });
+        string actionText = action == DriveSecurityAction.LockDrive ? "khóa ổ D" : "mở khóa ổ D";
+        StatusMessage = count > 0
+            ? $"Đã {actionText} thành công trên máy {student.MachineName} ({student.IpAddress})."
+            : $"Không thể {actionText} trên máy {student.MachineName}.";
     }
 
     private async Task ToggleBroadcastAsync()

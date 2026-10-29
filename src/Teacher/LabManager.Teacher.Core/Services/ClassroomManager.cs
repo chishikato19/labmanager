@@ -23,6 +23,7 @@ public class ClassroomManager : IDisposable
     private readonly LanDeployServer _deployServer = new();
     private readonly System.Net.Sockets.UdpClient _udpQuickSender = new();
     private readonly ConcurrentDictionary<string, StudentNode> _students = new();
+    private readonly ConcurrentDictionary<string, bool> _activeRemoteSessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly Timer _healthCheckTimer;
     private ScreenBroadcastSender? _broadcastSender;
     private bool _laserPointerEnabled;
@@ -601,10 +602,23 @@ public class ClassroomManager : IDisposable
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
 
+    public bool IsStudentInRemoteSession(string studentIp)
+    {
+        string cleanIp = studentIp.StartsWith("::ffff:") ? studentIp[7..] : studentIp;
+        return _activeRemoteSessions.ContainsKey(cleanIp);
+    }
+
     public void SendFocusStream(string studentIp, bool enableFocus)
     {
         if (string.IsNullOrWhiteSpace(studentIp)) return;
         string cleanIp = studentIp.StartsWith("::ffff:") ? studentIp[7..] : studentIp;
+
+        // Nếu máy học sinh đang trong phiên điều khiển từ xa, không cho phép sự kiện hover/unhover làm rớt chất lượng
+        if (!enableFocus && _activeRemoteSessions.ContainsKey(cleanIp))
+        {
+            return;
+        }
+
         if (!System.Net.IPAddress.TryParse(cleanIp, out var ip)) return;
 
         try
@@ -614,6 +628,7 @@ public class ClassroomManager : IDisposable
             {
                 Start = false,
                 HighQualityFocus = enableFocus,
+                IsControlSession = false,
                 TeacherIp = localIp
             };
             byte[] bytes = PacketSerializer.Serialize(CommandType.RemoteSession, packet);
@@ -625,16 +640,26 @@ public class ClassroomManager : IDisposable
 
     public async Task<bool> SendRemoteSessionControlAsync(string studentIp, bool start)
     {
+        string cleanIp = studentIp.StartsWith("::ffff:") ? studentIp[7..] : studentIp;
+        if (start)
+        {
+            _activeRemoteSessions[cleanIp] = true;
+        }
+        else
+        {
+            _activeRemoteSessions.TryRemove(cleanIp, out _);
+        }
+
         var (localIp, _) = NetworkInfoHelper.GetActiveNetworkInfo();
         var packet = new RemoteSessionPacket
         {
             Start = start,
+            IsControlSession = true,
             TeacherIp = localIp
         };
         byte[] bytes = PacketSerializer.Serialize(CommandType.RemoteSession, packet);
 
         // Phát UDP trước để máy học sinh chuyển chế độ ngay lập tức (< 1ms)
-        string cleanIp = studentIp.StartsWith("::ffff:") ? studentIp[7..] : studentIp;
         if (System.Net.IPAddress.TryParse(cleanIp, out var ip))
         {
             try
@@ -847,6 +872,26 @@ public class ClassroomManager : IDisposable
                 }
             }
         }
+    }
+
+    public async Task<int> SetDriveSecurityAsync(DriveSecurityAction action, string driveLetter = @"D:\", IEnumerable<string>? targetIps = null)
+    {
+        var packet = new DriveSecurityPacket
+        {
+            Action = action,
+            DriveLetter = driveLetter
+        };
+
+        byte[] packetBytes = PacketSerializer.Serialize(CommandType.DriveSecurityControl, packet);
+        var ips = targetIps?.ToList() ?? _students.Values
+            .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
+            .Select(s => s.IpAddress)
+            .ToList();
+
+        if (ips.Count == 0) return 0;
+
+        var results = await _commandSender.SendToMultipleAsync(ips, packetBytes);
+        return results.Values.Count(success => success);
     }
 
     private void CheckOfflineStudents(object? state)

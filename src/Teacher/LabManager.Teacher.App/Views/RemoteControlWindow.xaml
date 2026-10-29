@@ -29,20 +29,37 @@
                     <Border Background="#10B981" CornerRadius="10" Padding="8,2" VerticalAlignment="Center" Margin="0,0,8,0">
                         <TextBlock Text="⚡ UDP Chuột Không Trễ (&lt; 1ms)" Foreground="White" FontSize="11" FontWeight="Bold"/>
                     </Border>
-                    <Border Background="#0284C7" CornerRadius="10" Padding="8,2" VerticalAlignment="Center">
+                    <Border Background="#0284C7" CornerRadius="10" Padding="8,2" VerticalAlignment="Center" Margin="0,0,8,0">
                         <TextBlock Text="🔴 20 FPS Cực Nét Native" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                    </Border>
+                    <Border Background="#475569" CornerRadius="10" Padding="8,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ResolutionText, StringFormat='📺 {0}'}" Foreground="#F8FAFC" FontSize="11" FontWeight="SemiBold"/>
                     </Border>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="{Binding ScalingModeText}" Command="{Binding ToggleScalingModeCommand}"
+                            Background="#334155" Foreground="White" FontSize="11" FontWeight="SemiBold"
+                            Padding="8,4" Margin="0,0,8,0" Cursor="Hand" BorderThickness="0"
+                            ToolTip="Nhấp để chuyển đổi giữa Sắc nét chữ (Linear) và Mượt mà (Bicubic)">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                    </Button>
+
+                    <Button x:Name="BtnFullscreen" Content="⛶ Toàn màn hình (F11)" Click="BtnFullscreen_Click"
+                            Background="#2563EB" Foreground="White" FontWeight="Bold" FontSize="11"
+                            Padding="10,4" Margin="0,0,8,0" Cursor="Hand" BorderThickness="0"
+                            ToolTip="Phóng to toàn màn hình để chữ và icon đạt độ sắc nét 100% Native">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                    </Button>
+
                     <Button Content="{Binding BroadcastButtonText}" Command="{Binding ToggleBroadcastThisStudentCommand}"
                             Background="{Binding BroadcastButtonColor}" Foreground="White" FontWeight="Bold" FontSize="11"
                             Padding="10,4" Margin="0,0,12,0" Cursor="Hand" BorderThickness="0"
                             ToolTip="Chiếu bài làm của học sinh này lên toàn bộ máy học sinh khác trong phòng">
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                     </Button>
-                    <TextBlock Text="v1.3.2" Foreground="#64748B" FontSize="11" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="💡 Thao tác chuột và bàn phím trực tiếp trên khung màn hình" Foreground="#94A3B8" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock Text="v1.3.3" Foreground="#64748B" FontSize="11" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="💡 Bấm F11 để phóng to/thu nhỏ" Foreground="#94A3B8" FontSize="12" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -60,7 +77,7 @@
                        Source="{Binding CurrentScreen}"
                        Stretch="Uniform"
                        Focusable="True"
-                       RenderOptions.BitmapScalingMode="HighQuality"
+                       RenderOptions.BitmapScalingMode="{Binding ScalingMode}"
                        MouseMove="OnImageMouseMove"
                        MouseDown="OnImageMouseDown"
                        MouseUp="OnImageMouseUp"

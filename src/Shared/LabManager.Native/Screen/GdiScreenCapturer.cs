@@ -45,18 +45,30 @@ public class GdiScreenCapturer : IScreenCapturer
     public bool CaptureCursor { get; set; } = true;
     public bool LaserPointerEnabled { get; set; }
 
+    public int ScreenWidth
+    {
+        get
+        {
+            int w = GetSystemMetrics(SM_CXSCREEN);
+            return w > 0 ? w : 1920;
+        }
+    }
+
+    public int ScreenHeight
+    {
+        get
+        {
+            int h = GetSystemMetrics(SM_CYSCREEN);
+            return h > 0 ? h : 1080;
+        }
+    }
+
     public byte[]? CaptureFrameJpeg(int quality = 50, int? targetWidth = null, int? targetHeight = null)
     {
         if (_isDisposed) return null;
 
-        int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-        int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-        if (screenWidth <= 0 || screenHeight <= 0)
-        {
-            screenWidth = 1920;
-            screenHeight = 1080;
-        }
+        int screenWidth = ScreenWidth;
+        int screenHeight = ScreenHeight;
 
         int outWidth = targetWidth ?? screenWidth;
         int outHeight = targetHeight ?? screenHeight;
