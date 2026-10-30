@@ -216,6 +216,23 @@ public class DashboardViewModel : ViewModelBase, IDisposable
     public RelayCommand UnlockDriveDCommand { get; }
     public RelayCommand LockStudentDriveDCommand { get; }
     public RelayCommand UnlockStudentDriveDCommand { get; }
+    public RelayCommand ScanMachinesCommand { get; }
+    public RelayCommand OpenScanDialogCommand { get; }
+
+    private bool _isScanning;
+    public bool IsScanning
+    {
+        get => _isScanning;
+        set
+        {
+            if (SetProperty(ref _isScanning, value))
+            {
+                OnPropertyChanged(nameof(ScanButtonText));
+            }
+        }
+    }
+
+    public string ScanButtonText => IsScanning ? "⏳ Đang quét..." : "🔍 Quét tìm máy";
 
     public DashboardViewModel()
     {
@@ -277,6 +294,8 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         UnlockDriveDCommand = new RelayCommand(async () => await SetDriveSecuritySelectedOrAllAsync(DriveSecurityAction.UnlockDrive));
         LockStudentDriveDCommand = new RelayCommand(async param => await SetDriveSecurityStudentAsync(param as StudentCardViewModel, DriveSecurityAction.LockDrive));
         UnlockStudentDriveDCommand = new RelayCommand(async param => await SetDriveSecurityStudentAsync(param as StudentCardViewModel, DriveSecurityAction.UnlockDrive));
+        ScanMachinesCommand = new RelayCommand(async () => await ScanMachinesQuickAsync());
+        OpenScanDialogCommand = new RelayCommand(OpenScanDialog);
 
         _classroomManager.OnFileCollected += (submission, savePath) =>
         {
@@ -740,6 +759,46 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         win.ShowDialog();
     }
 
+    public void OpenScanDialog()
+    {
+        var vm = new ScanMachinesViewModel(_classroomManager, Students);
+        var win = new ScanMachinesWindow(vm)
+        {
+            Owner = Application.Current?.MainWindow
+        };
+        win.ShowDialog();
+    }
+
+    private async Task ScanMachinesQuickAsync()
+    {
+        if (IsScanning) return;
+
+        IsScanning = true;
+        StatusMessage = "🔍 Đang phát tín hiệu và quét dải IP tìm kiếm toàn bộ máy học sinh...";
+
+        try
+        {
+            int online = await _classroomManager.ScanMachinesAsync(null, default, (sent, total) =>
+            {
+                Dispatch(() =>
+                {
+                    double pct = total > 0 ? (double)sent / total * 100.0 : 0;
+                    StatusMessage = $"🔍 Đang rà quét dải IP LAN ({sent}/{total} - {pct:F0}%)... Đã tìm thấy: {OnlineCount} máy";
+                });
+            });
+
+            StatusMessage = $"✅ Quét hoàn tất! Tìm thấy {OnlineCount}/{TotalCount} máy học sinh trực tuyến.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Lỗi khi quét tìm máy: {ex.Message}";
+        }
+        finally
+        {
+            IsScanning = false;
+        }
+    }
+
     private static string GetInitialSetupDirectory()
     {
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -1064,11 +1123,22 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         };
     }
 
+    private static bool IsValidMac(string? mac)
+    {
+        if (string.IsNullOrWhiteSpace(mac)) return false;
+        string clean = mac.Replace(":", "").Replace("-", "").Trim();
+        return clean.Length > 0 && !clean.All(c => c == '0');
+    }
+
     private void OnStudentJoined(LabManager.Core.Models.StudentNode node)
     {
         Dispatch(() =>
         {
-            var existing = Students.FirstOrDefault(s => s.Id == node.Id || (!string.IsNullOrEmpty(node.MacAddress) && s.MacAddress == node.MacAddress));
+            var existing = Students.FirstOrDefault(s => 
+                (!string.IsNullOrEmpty(node.Id) && s.Id == node.Id) || 
+                (IsValidMac(node.MacAddress) && string.Equals(s.MacAddress, node.MacAddress, StringComparison.OrdinalIgnoreCase)) ||
+                (string.Equals(s.MachineName, node.MachineName, StringComparison.OrdinalIgnoreCase) && s.IpAddress == node.IpAddress));
+
             if (existing != null)
                 existing.UpdateFrom(node);
             else

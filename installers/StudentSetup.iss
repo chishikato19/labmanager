@@ -1,6 +1,6 @@
 ; Script Inno Setup cho LabManager Student App
 #define MyAppName "LabManager Student"
-#define MyAppVersion "1.3.5"
+#define MyAppVersion "1.3.6"
 #define MyAppPublisher "LabManager Team"
 #define MyAppExeName "LabManager.Student.App.exe"
 

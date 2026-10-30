@@ -1,6 +1,7 @@
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -48,7 +49,7 @@ public partial class MainWindow : Window
         if (sender is Button btn && btn.ContextMenu != null)
         {
             btn.ContextMenu.PlacementTarget = btn;
-            btn.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            btn.ContextMenu.Placement = PlacementMode.Bottom;
             btn.ContextMenu.IsOpen = true;
         }
     }
@@ -65,13 +66,18 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StudentScrollViewer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void StudentAreaGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (DataContext is not ViewModels.DashboardViewModel vm) return;
+        // 1. Cho phép các nút bấm, ô checkbox, text box và thanh cuộn nhận sự kiện chuột bình thường
+        if (FindVisualParent<ButtonBase>(e.OriginalSource as DependencyObject) != null) return;
+        if (FindVisualParent<ScrollBar>(e.OriginalSource as DependencyObject) != null) return;
+        if (FindVisualParent<TextBox>(e.OriginalSource as DependencyObject) != null) return;
+        if (IsInsideElement(e.OriginalSource as DependencyObject, "CollectionBannerBorder")) return;
 
-        // Ignore clicks originating from active collection banner or action buttons
-        if (IsInsideElement(e.OriginalSource as DependencyObject, "CollectionBannerBorder"))
-            return;
+        // 2. Cho phép nhấp đúp chuột vào thẻ để mở điều khiển từ xa (UltraViewer)
+        if (e.ClickCount > 1) return;
+
+        if (DataContext is not ViewModels.DashboardViewModel vm) return;
 
         _isMouseDown = true;
         _isDragging = false;
@@ -84,19 +90,29 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StudentScrollViewer_MouseMove(object sender, MouseEventArgs e)
+    private void StudentAreaGrid_PreviewMouseMove(object sender, MouseEventArgs e)
     {
         if (!_isMouseDown) return;
+
+        // Đảm bảo chuột trái vẫn đang được giữ
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            _isMouseDown = false;
+            _isDragging = false;
+            SelectionRectangle.Visibility = Visibility.Collapsed;
+            StudentAreaGrid.ReleaseMouseCapture();
+            return;
+        }
 
         Point currentPoint = e.GetPosition(SelectionCanvas);
 
         if (!_isDragging)
         {
-            // Check minimum drag distance before initiating marquee box
+            // Ngưỡng kéo tối thiểu 4px để không nhầm với nhấp chuột
             if (Math.Abs(currentPoint.X - _startPoint.X) > 4 || Math.Abs(currentPoint.Y - _startPoint.Y) > 4)
             {
                 _isDragging = true;
-                StudentScrollViewer.CaptureMouse();
+                StudentAreaGrid.CaptureMouse();
                 SelectionRectangle.Visibility = Visibility.Visible;
             }
         }
@@ -117,7 +133,7 @@ public partial class MainWindow : Window
             bool isCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             UpdateSelection(selectionRect, isCtrl);
 
-            // Auto-scroll when dragging near viewport boundary
+            // Tự động cuộn ScrollViewer khi kéo chuột sát mép trên hoặc dưới
             Point scrollPos = e.GetPosition(StudentScrollViewer);
             if (scrollPos.Y < 30)
             {
@@ -127,25 +143,27 @@ public partial class MainWindow : Window
             {
                 StudentScrollViewer.ScrollToVerticalOffset(StudentScrollViewer.VerticalOffset + 16);
             }
+
+            e.Handled = true; // Ngăn chặn sự kiện kéo thả mặc định
         }
     }
 
-    private void StudentScrollViewer_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void StudentAreaGrid_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (!_isMouseDown) return;
 
         if (_isDragging)
         {
-            StudentScrollViewer.ReleaseMouseCapture();
+            StudentAreaGrid.ReleaseMouseCapture();
             _isDragging = false;
             SelectionRectangle.Visibility = Visibility.Collapsed;
+            e.Handled = true;
         }
         else
         {
-            // Click without dragging
             SelectionRectangle.Visibility = Visibility.Collapsed;
 
-            // If clicked on empty space (not on any student card) and not holding Ctrl, clear selection
+            // Nhấp chuột không kéo: Nếu nhấp vào vùng trống (không phải thẻ máy học sinh) và không giữ Ctrl thì bỏ chọn tất cả
             var card = FindCardFromVisual(e.OriginalSource as DependencyObject);
             if (card == null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
@@ -159,7 +177,7 @@ public partial class MainWindow : Window
         _isMouseDown = false;
     }
 
-    private void StudentScrollViewer_MouseLeave(object sender, MouseEventArgs e)
+    private void StudentAreaGrid_MouseLeave(object sender, MouseEventArgs e)
     {
         if (!_isDragging)
         {
@@ -167,7 +185,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StudentScrollViewer_LostMouseCapture(object sender, MouseEventArgs e)
+    private void StudentAreaGrid_LostMouseCapture(object sender, MouseEventArgs e)
     {
         _isMouseDown = false;
         _isDragging = false;
@@ -207,7 +225,7 @@ public partial class MainWindow : Window
             }
             catch (InvalidOperationException)
             {
-                // Visual tree element might be detached
+                // Phần tử visual tree có thể chưa sẵn sàng
             }
         }
     }
@@ -221,6 +239,19 @@ public partial class MainWindow : Window
                 return card;
             }
             visual = VisualTreeHelper.GetParent(visual);
+        }
+        return null;
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
+    {
+        while (child != null)
+        {
+            if (child is T parent)
+            {
+                return parent;
+            }
+            child = VisualTreeHelper.GetParent(child);
         }
         return null;
     }

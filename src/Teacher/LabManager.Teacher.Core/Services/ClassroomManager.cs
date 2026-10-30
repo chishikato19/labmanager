@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
 using LabManager.Core.Enums;
 using LabManager.Core.Models;
 using LabManager.Native.Screen;
@@ -123,7 +125,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.ScreenIntervalConfig, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -151,7 +153,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.LockControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -179,7 +181,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.PowerControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -221,7 +223,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.BroadcastControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -290,7 +292,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.BroadcastControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -373,7 +375,7 @@ public class ClassroomManager : IDisposable
         _lastTeacherIp = teacherIp;
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _fileService.StartCollectionSessionAsync(onlineIps, teacherIp, folderPath, sessionTitle, prefixMachineName, separateMachineFolder);
     }
@@ -383,7 +385,7 @@ public class ClassroomManager : IDisposable
         _lastTeacherIp = teacherIp;
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _fileService.StopCollectionSessionAsync(onlineIps, teacherIp);
     }
@@ -393,7 +395,7 @@ public class ClassroomManager : IDisposable
         _lastTeacherIp = teacherIp;
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _fileService.RequestCollectAllAsync(onlineIps, teacherIp, sourceSubFolder);
     }
@@ -430,7 +432,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.ProcessControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -444,7 +446,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.ProcessControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -459,7 +461,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.WebFilterControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -473,7 +475,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.WebFilterControl, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -504,7 +506,7 @@ public class ClassroomManager : IDisposable
     {
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
         await SendOpenUrlToTargetsAsync(onlineIps, url, forceChrome);
     }
 
@@ -534,7 +536,7 @@ public class ClassroomManager : IDisposable
     {
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
         await SendLaunchAppToTargetsAsync(onlineIps, appNameOrPath, arguments);
     }
 
@@ -598,7 +600,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.ChatMessage, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -624,7 +626,7 @@ public class ClassroomManager : IDisposable
         byte[] bytes = PacketSerializer.Serialize(CommandType.ChatMessage, packet);
         var onlineIps = _students.Values
             .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
-            .Select(s => s.IpAddress);
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
 
         await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
@@ -807,6 +809,9 @@ public class ClassroomManager : IDisposable
 
     private void HandleScreenFrame(ScreenFramePacket packet, string senderIp)
     {
+        string cleanSenderIp = senderIp.StartsWith("::ffff:") ? senderIp[7..] : senderIp;
+        bool found = false;
+
         // Cập nhật LastSeen cho student
         foreach (var student in _students.Values)
         {
@@ -815,20 +820,27 @@ public class ClassroomManager : IDisposable
                 if (student.Id.Equals(packet.MachineId, StringComparison.OrdinalIgnoreCase))
                 {
                     student.LastSeen = DateTime.UtcNow;
+                    found = true;
                     break;
                 }
             }
-            else if (student.IpAddress == senderIp)
+            else if (student.IpAddress == cleanSenderIp || student.IpAddress == senderIp)
             {
                 student.LastSeen = DateTime.UtcNow;
+                found = true;
                 break;
             }
+        }
+
+        // Tự động yêu cầu máy học sinh nhận diện nếu đang nhận stream mà máy chưa có trong danh sách
+        if (!found && IPAddress.TryParse(cleanSenderIp, out var parsedSenderIp))
+        {
+            _ = _discoveryService.SendBeaconToIpAsync(parsedSenderIp);
         }
 
         // Nếu đang ở chế độ chiếu bài làm của học sinh này cho cả lớp
         if (IsStudentBroadcasting && !string.IsNullOrEmpty(BroadcastingStudentId))
         {
-            string cleanSenderIp = senderIp.StartsWith("::ffff:") ? senderIp[7..] : senderIp;
             string? cleanBroadcastingIp = _broadcastingStudentIp != null && _broadcastingStudentIp.StartsWith("::ffff:") ? _broadcastingStudentIp[7..] : _broadcastingStudentIp;
 
             bool matches = packet.MachineId.Equals(BroadcastingStudentId, StringComparison.OrdinalIgnoreCase)
@@ -844,22 +856,36 @@ public class ClassroomManager : IDisposable
         OnScreenFrameReceived?.Invoke(packet, senderIp);
     }
 
+    private static bool IsValidMac(string? mac)
+    {
+        if (string.IsNullOrWhiteSpace(mac)) return false;
+        string clean = mac.Replace(":", "").Replace("-", "").Trim();
+        return clean.Length > 0 && !clean.All(c => c == '0');
+    }
+
     private void HandleStudentDiscovered(DiscoveryResponsePacket packet, string ipAddress)
     {
-        string key = string.IsNullOrWhiteSpace(packet.MacAddress) 
-            ? $"{packet.MachineName}_{ipAddress}" 
-            : packet.MacAddress;
+        string cleanIp = ipAddress.StartsWith("::ffff:") ? ipAddress[7..] : ipAddress;
+
+        // Định danh duy nhất: Ưu tiên MachineId, sau đó tới MAC hợp lệ (khác 0), cuối cùng là Tên máy + IP
+        string key = !string.IsNullOrWhiteSpace(packet.MachineId)
+            ? packet.MachineId
+            : (IsValidMac(packet.MacAddress) ? packet.MacAddress : $"{packet.MachineName}_{cleanIp}");
 
         if (_students.TryGetValue(key, out var existing))
         {
             bool wasOffline = existing.Status == MachineStatus.Offline;
 
-            existing.IpAddress = ipAddress;
+            existing.IpAddress = cleanIp;
             existing.MachineName = packet.MachineName;
             existing.CurrentUser = packet.CurrentUser;
             existing.CommandPort = packet.CommandPort;
             existing.Status = packet.Status;
             existing.AppVersion = packet.AppVersion;
+            if (IsValidMac(packet.MacAddress))
+            {
+                existing.MacAddress = packet.MacAddress;
+            }
             existing.LastSeen = DateTime.UtcNow;
 
             if (wasOffline)
@@ -867,7 +893,7 @@ public class ClassroomManager : IDisposable
                 OnStudentJoined?.Invoke(existing);
                 if (_fileService.IsCollecting && !string.IsNullOrWhiteSpace(_lastTeacherIp))
                 {
-                    _ = _fileService.StartCollectionSessionAsync(new[] { ipAddress }, _lastTeacherIp, _fileService.CurrentCollectionFolder, _fileService.CurrentSessionTitle, _fileService.PrefixMachineName, _fileService.SeparateMachineFolder);
+                    _ = _fileService.StartCollectionSessionAsync(new[] { cleanIp }, _lastTeacherIp, _fileService.CurrentCollectionFolder, _fileService.CurrentSessionTitle, _fileService.PrefixMachineName, _fileService.SeparateMachineFolder);
                 }
             }
             else
@@ -882,7 +908,7 @@ public class ClassroomManager : IDisposable
                 Id = string.IsNullOrWhiteSpace(packet.MachineId) ? Guid.NewGuid().ToString("N") : packet.MachineId,
                 MachineName = packet.MachineName,
                 CurrentUser = packet.CurrentUser,
-                IpAddress = ipAddress,
+                IpAddress = cleanIp,
                 MacAddress = packet.MacAddress,
                 CommandPort = packet.CommandPort,
                 Status = packet.Status,
@@ -895,9 +921,134 @@ public class ClassroomManager : IDisposable
                 OnStudentJoined?.Invoke(newNode);
                 if (_fileService.IsCollecting && !string.IsNullOrWhiteSpace(_lastTeacherIp))
                 {
-                    _ = _fileService.StartCollectionSessionAsync(new[] { ipAddress }, _lastTeacherIp, _fileService.CurrentCollectionFolder, _fileService.CurrentSessionTitle, _fileService.PrefixMachineName, _fileService.SeparateMachineFolder);
+                    _ = _fileService.StartCollectionSessionAsync(new[] { cleanIp }, _lastTeacherIp, _fileService.CurrentCollectionFolder, _fileService.CurrentSessionTitle, _fileService.PrefixMachineName, _fileService.SeparateMachineFolder);
                 }
             }
+        }
+    }
+
+    public async Task<int> ScanMachinesAsync(string? targetIpOrRange = null, CancellationToken ct = default, Action<int, int>? onProgress = null)
+    {
+        // 1. Phát beacon ngay lập tức tới tất cả các card mạng (broadcast)
+        await _discoveryService.BroadcastBeaconNowAsync();
+
+        // 2. Xác định danh sách IP mục tiêu
+        List<IPAddress> targetIps;
+        if (!string.IsNullOrWhiteSpace(targetIpOrRange))
+        {
+            targetIps = ParseIpInput(targetIpOrRange);
+        }
+        else
+        {
+            targetIps = TeacherDiscoveryService.GetLocalSubnetHostIps();
+        }
+
+        // 3. Thực hiện quét unicast dải IP
+        if (targetIps.Count > 0)
+        {
+            await _discoveryService.ScanIpsAsync(targetIps, ct, onProgress);
+        }
+
+        // Đợi một khoảng ngắn để máy học sinh phản hồi đầy đủ qua mạng LAN
+        try
+        {
+            await Task.Delay(800, ct);
+        }
+        catch (OperationCanceledException) { }
+
+        return _students.Values.Count(s => s.Status != MachineStatus.Offline);
+    }
+
+    public static List<IPAddress> ParseIpInput(string input)
+    {
+        var list = new List<IPAddress>();
+        if (string.IsNullOrWhiteSpace(input)) return list;
+
+        string trimmed = input.Trim();
+
+        // 1. IP đơn lẻ: 192.168.1.100
+        if (IPAddress.TryParse(trimmed, out var singleIp))
+        {
+            list.Add(singleIp);
+            return list;
+        }
+
+        // 2. Dải IP có dấu gạch ngang: 192.168.1.1 - 192.168.1.50 hoặc 192.168.1.1-50
+        if (trimmed.Contains('-'))
+        {
+            var parts = trimmed.Split('-');
+            if (parts.Length == 2)
+            {
+                string startStr = parts[0].Trim();
+                string endStr = parts[1].Trim();
+
+                if (IPAddress.TryParse(startStr, out var startIp))
+                {
+                    byte[] startBytes = startIp.GetAddressBytes();
+                    if (endStr.Contains('.') && IPAddress.TryParse(endStr, out var endIp))
+                    {
+                        byte[] endBytes = endIp.GetAddressBytes();
+                        if (startBytes.Length == 4 && endBytes.Length == 4 &&
+                            startBytes[0] == endBytes[0] && startBytes[1] == endBytes[1] && startBytes[2] == endBytes[2])
+                        {
+                            int from = startBytes[3];
+                            int to = endBytes[3];
+                            if (from > to) (from, to) = (to, from);
+                            for (int i = from; i <= to; i++)
+                            {
+                                list.Add(new IPAddress(new byte[] { startBytes[0], startBytes[1], startBytes[2], (byte)i }));
+                            }
+                            return list;
+                        }
+                    }
+                    else if (int.TryParse(endStr, out int endHost) && endHost >= 1 && endHost <= 254)
+                    {
+                        int from = startBytes[3];
+                        int to = endHost;
+                        if (from > to) (from, to) = (to, from);
+                        for (int i = from; i <= to; i++)
+                        {
+                            list.Add(new IPAddress(new byte[] { startBytes[0], startBytes[1], startBytes[2], (byte)i }));
+                        }
+                        return list;
+                    }
+                }
+            }
+        }
+
+        // 3. CIDR: 192.168.1.0/24
+        if (trimmed.Contains('/'))
+        {
+            var parts = trimmed.Split('/');
+            if (parts.Length == 2 && IPAddress.TryParse(parts[0].Trim(), out var baseIp) && int.TryParse(parts[1].Trim(), out int prefix))
+            {
+                if (prefix == 24)
+                {
+                    byte[] b = baseIp.GetAddressBytes();
+                    for (int i = 1; i <= 254; i++)
+                    {
+                        list.Add(new IPAddress(new byte[] { b[0], b[1], b[2], (byte)i }));
+                    }
+                    return list;
+                }
+            }
+        }
+
+        return list;
+    }
+
+    public static async Task<bool> CheckTcpCommandPortAsync(string ip, int timeoutMs = 500)
+    {
+        try
+        {
+            using var tcp = new TcpClient();
+            using var cts = new CancellationTokenSource(timeoutMs);
+            await tcp.ConnectAsync(ip, NetworkConfig.DefaultCommandPort, cts.Token);
+            return true;
+        }
+        catch
+        {
+            return false;
         }
     }
 

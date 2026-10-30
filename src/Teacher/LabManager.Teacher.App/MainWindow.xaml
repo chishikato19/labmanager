@@ -276,9 +276,31 @@
                     <Button Content="💬 Tin nhắn &amp; Thông báo"
                             Command="{Binding OpenBroadcastChatCommand}"
                             Background="#7C3AED" Foreground="White" FontWeight="SemiBold" FontSize="12"
-                            Padding="12,7" Margin="0,0,12,0" Cursor="Hand" BorderThickness="0"
+                            Padding="12,7" Margin="0,0,8,0" Cursor="Hand" BorderThickness="0"
                             ToolTip="Gửi tin nhắn trao đổi hoặc phát thông báo nổi toàn phòng máy">
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                    </Button>
+
+                    <!-- NÚT QUÉT TÌM MÁY (TÌM MÁY THIẾU) -->
+                    <Button Content="{Binding ScanButtonText}"
+                            Command="{Binding ScanMachinesCommand}"
+                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
+                            Background="#0284C7" Foreground="White" FontWeight="SemiBold" FontSize="12"
+                            Padding="12,7" Margin="0,0,10,0" Cursor="Hand" BorderThickness="0"
+                            ToolTip="Quét tìm toàn bộ máy học sinh trong mạng LAN (Nhấp chuột để quét tự động, chuột phải để mở Quét nâng cao / Nhập IP)">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                        <Button.ContextMenu>
+                            <ContextMenu Style="{StaticResource TopBarContextMenuStyle}">
+                                <MenuItem Header="⚡ Quét nhanh tự động (Toàn mạng LAN)"
+                                          Command="{Binding PlacementTarget.Tag.ScanMachinesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          ToolTip="Phát broadcast và quét đồng loạt dải IP mạng LAN để tìm máy"
+                                          Foreground="#0284C7"/>
+                                <MenuItem Header="🎯 Quét nâng cao (Nhập IP cụ thể hoặc xem nhật ký)..."
+                                          Command="{Binding PlacementTarget.Tag.OpenScanDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          ToolTip="Mở cửa sổ dò tìm chuyên sâu: Nhập địa chỉ IP máy bị thiếu và xem hướng dẫn khắc phục"
+                                          Foreground="#4F46E5"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
                     </Button>
 
                     <Border Background="#F8FAFC" CornerRadius="18" Padding="12,5" BorderBrush="#CBD5E1" BorderThickness="1">
@@ -315,7 +337,14 @@
 
                     <Button Content="✖ Bỏ chọn" Command="{Binding DeselectAllCommand}"
                             Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1"
-                            Foreground="#64748B" FontSize="11" Padding="9,4" Margin="0,0,12,0" Cursor="Hand">
+                            Foreground="#64748B" FontSize="11" Padding="9,4" Margin="0,0,6,0" Cursor="Hand">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                    </Button>
+
+                    <Button Content="🔄 Quét tìm máy" Command="{Binding OpenScanDialogCommand}"
+                            Background="#F0F9FF" BorderBrush="#BAE6FD" BorderThickness="1"
+                            Foreground="#0284C7" FontSize="11" FontWeight="SemiBold" Padding="9,4" Margin="0,0,12,0" Cursor="Hand"
+                            ToolTip="Mở bảng quét và tìm kiếm máy học sinh (dò tìm máy bị thiếu)">
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                     </Button>
 
@@ -385,49 +414,49 @@
         </Border>
 
         <!-- MAIN CONTENT: STUDENT GRID -->
-        <ScrollViewer x:Name="StudentScrollViewer" Grid.Row="2" Background="#F1F5F9" 
-                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="15"
-                      PreviewMouseWheel="StudentScrollViewer_PreviewMouseWheel"
-                      MouseLeftButtonDown="StudentScrollViewer_MouseLeftButtonDown"
-                      MouseMove="StudentScrollViewer_MouseMove"
-                      MouseLeftButtonUp="StudentScrollViewer_MouseLeftButtonUp"
-                      MouseLeave="StudentScrollViewer_MouseLeave"
-                      LostMouseCapture="StudentScrollViewer_LostMouseCapture">
-            <StackPanel>
-                <!-- Active Collection Banner -->
-                <Border x:Name="CollectionBannerBorder" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1.5" CornerRadius="8"
-                        Padding="14,10" Margin="0,0,0,12"
-                        Visibility="{Binding IsCollectingFiles, Converter={StaticResource BoolToVisConverter}}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="📥 ĐANG MỞ ĐỢT THU BÀI TẬP" FontWeight="Bold" Foreground="#047857" FontSize="13" VerticalAlignment="Center"/>
-                            <TextBlock Text="  •  Thư mục lưu: " Foreground="#065F46" FontSize="12" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding CurrentCollectionFolder}" FontWeight="SemiBold" Foreground="#0F172A" FontSize="12" VerticalAlignment="Center"/>
-                            <Border Background="#10B981" CornerRadius="12" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding CollectedCount, StringFormat='Đã nhận: {0} bài'}" Foreground="White" FontWeight="Bold" FontSize="11"/>
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Content="📂 Mở thư mục bài nộp" Command="{Binding OpenCollectionFolderCommand}"
-                                    Background="#059669" Foreground="White" FontWeight="SemiBold" FontSize="11"
-                                    Padding="10,5" Margin="0,0,8,0" Cursor="Hand" BorderThickness="0">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                            </Button>
-                            <Button Content="⏹️ Kết thúc đợt thu bài" Command="{Binding StopCollectFilesCommand}"
-                                    Background="#DC2626" Foreground="White" FontWeight="SemiBold" FontSize="11"
-                                    Padding="10,5" Cursor="Hand" BorderThickness="0">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-                </Border>
+        <Grid x:Name="StudentAreaGrid" Grid.Row="2"
+              PreviewMouseLeftButtonDown="StudentAreaGrid_PreviewMouseLeftButtonDown"
+              PreviewMouseMove="StudentAreaGrid_PreviewMouseMove"
+              PreviewMouseLeftButtonUp="StudentAreaGrid_PreviewMouseLeftButtonUp"
+              MouseLeave="StudentAreaGrid_MouseLeave"
+              LostMouseCapture="StudentAreaGrid_LostMouseCapture">
 
-                <!-- Cards Container with Selection Overlay Canvas -->
-                <Grid x:Name="CardsContainer">
+            <ScrollViewer x:Name="StudentScrollViewer" Background="#F1F5F9" 
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="15"
+                          PreviewMouseWheel="StudentScrollViewer_PreviewMouseWheel">
+                <StackPanel>
+                    <!-- Active Collection Banner -->
+                    <Border x:Name="CollectionBannerBorder" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1.5" CornerRadius="8"
+                            Padding="14,10" Margin="0,0,0,12"
+                            Visibility="{Binding IsCollectingFiles, Converter={StaticResource BoolToVisConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="📥 ĐANG MỞ ĐỢT THU BÀI TẬP" FontWeight="Bold" Foreground="#047857" FontSize="13" VerticalAlignment="Center"/>
+                                <TextBlock Text="  •  Thư mục lưu: " Foreground="#065F46" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding CurrentCollectionFolder}" FontWeight="SemiBold" Foreground="#0F172A" FontSize="12" VerticalAlignment="Center"/>
+                                <Border Background="#10B981" CornerRadius="12" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding CollectedCount, StringFormat='Đã nhận: {0} bài'}" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="📂 Mở thư mục bài nộp" Command="{Binding OpenCollectionFolderCommand}"
+                                        Background="#059669" Foreground="White" FontWeight="SemiBold" FontSize="11"
+                                        Padding="10,5" Margin="0,0,8,0" Cursor="Hand" BorderThickness="0">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                </Button>
+                                <Button Content="⏹️ Kết thúc đợt thu bài" Command="{Binding StopCollectFilesCommand}"
+                                        Background="#DC2626" Foreground="White" FontWeight="SemiBold" FontSize="11"
+                                        Padding="10,5" Cursor="Hand" BorderThickness="0">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
                     <ItemsControl x:Name="StudentItemsControl" ItemsSource="{Binding DisplayedStudents}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -440,9 +469,7 @@
                                     Height="{Binding DataContext.CardHeight, RelativeSource={RelativeSource AncestorType=Window}}" 
                                     Margin="8" 
                                     CornerRadius="10" Background="#FFFFFF"
-                                    Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    MouseEnter="StudentCard_MouseEnter"
-                                    MouseLeave="StudentCard_MouseLeave">
+                                    Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="BorderBrush" Value="#CBD5E1"/>
@@ -588,7 +615,9 @@
 
                                 <!-- Screen Preview with Hover Zoom Tooltip -->
                                 <Border Grid.Row="1" Background="#0F172A" CornerRadius="6" BorderBrush="#CBD5E1" BorderThickness="1" ClipToBounds="True"
-                                        ToolTipService.InitialShowDelay="80" ToolTipService.BetweenShowDelay="30" ToolTipService.ShowDuration="30000" Cursor="Hand">
+                                        MouseEnter="StudentCard_MouseEnter"
+                                        MouseLeave="StudentCard_MouseLeave"
+                                        ToolTipService.InitialShowDelay="150" ToolTipService.BetweenShowDelay="50" ToolTipService.ShowDuration="30000" Cursor="Hand">
                                     <Border.ToolTip>
                                         <ToolTip Background="#FFFFFF" BorderBrush="#0284C7" BorderThickness="2" Padding="14">
                                             <StackPanel Width="780">
@@ -665,20 +694,20 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-
-                    <!-- Drag-to-Select Marquee Overlay Canvas -->
-                    <Canvas x:Name="SelectionCanvas" IsHitTestVisible="False">
-                        <Rectangle x:Name="SelectionRectangle"
-                                   Visibility="Collapsed"
-                                   Fill="#250284C7"
-                                   Stroke="#0284C7"
-                                   StrokeThickness="1.5"
-                                   StrokeDashArray="3 1"
-                                   RadiusX="2" RadiusY="2" />
-                    </Canvas>
-                </Grid>
             </StackPanel>
         </ScrollViewer>
+
+            <!-- Drag-to-Select Marquee Overlay Canvas spanning entire viewport -->
+            <Canvas x:Name="SelectionCanvas" IsHitTestVisible="False" ClipToBounds="True">
+                <Rectangle x:Name="SelectionRectangle"
+                           Visibility="Collapsed"
+                           Fill="#250284C7"
+                           Stroke="#0284C7"
+                           StrokeThickness="1.5"
+                           StrokeDashArray="3 1"
+                           RadiusX="2" RadiusY="2" />
+            </Canvas>
+        </Grid>
 
         <!-- STATUS BAR (LIGHT THEME) -->
         <Border Grid.Row="3" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="15,0">

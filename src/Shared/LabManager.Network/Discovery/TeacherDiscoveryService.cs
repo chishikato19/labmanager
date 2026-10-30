@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using LabManager.Core.Enums;
 using LabManager.Core.Models;
@@ -43,13 +44,108 @@ public class TeacherDiscoveryService : IDisposable
         _ = BroadcastBeaconLoopAsync(teacherName, roomName, broadcastIntervalMs, _cts.Token);
     }
 
+    public static List<IPAddress> GetAllBroadcastAddresses()
+    {
+        var broadcastList = new HashSet<IPAddress> { IPAddress.Broadcast };
+        try
+        {
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (nic.OperationalStatus != OperationalStatus.Up ||
+                    nic.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                var ipProps = nic.GetIPProperties();
+                foreach (var u in ipProps.UnicastAddresses)
+                {
+                    if (u.Address.AddressFamily == AddressFamily.InterNetwork && u.IPv4Mask != null)
+                    {
+                        byte[] ipBytes = u.Address.GetAddressBytes();
+                        byte[] maskBytes = u.IPv4Mask.GetAddressBytes();
+                        if (ipBytes.Length == 4 && maskBytes.Length == 4)
+                        {
+                            byte[] broadcastBytes = new byte[4];
+                            for (int i = 0; i < 4; i++)
+                            {
+                                broadcastBytes[i] = (byte)(ipBytes[i] | (~maskBytes[i] & 0xFF));
+                            }
+                            broadcastList.Add(new IPAddress(broadcastBytes));
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        return broadcastList.ToList();
+    }
+
+    public static List<IPAddress> GetLocalSubnetHostIps()
+    {
+        var result = new List<IPAddress>();
+        try
+        {
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (nic.OperationalStatus != OperationalStatus.Up ||
+                    nic.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                var ipProps = nic.GetIPProperties();
+                foreach (var u in ipProps.UnicastAddresses)
+                {
+                    if (u.Address.AddressFamily == AddressFamily.InterNetwork &&
+                        !IPAddress.IsLoopback(u.Address) &&
+                        u.IPv4Mask != null)
+                    {
+                        byte[] ipBytes = u.Address.GetAddressBytes();
+                        byte[] maskBytes = u.IPv4Mask.GetAddressBytes();
+                        if (ipBytes.Length == 4 && maskBytes.Length == 4)
+                        {
+                            uint ipVal = (uint)((ipBytes[0] << 24) | (ipBytes[1] << 16) | (ipBytes[2] << 8) | ipBytes[3]);
+                            uint maskVal = (uint)((maskBytes[0] << 24) | (maskBytes[1] << 16) | (maskBytes[2] << 8) | maskBytes[3]);
+                            uint networkVal = ipVal & maskVal;
+                            uint broadcastVal = networkVal | ~maskVal;
+
+                            uint hostCount = broadcastVal - networkVal - 1;
+                            if (hostCount > 0 && hostCount <= 512)
+                            {
+                                for (uint h = networkVal + 1; h < broadcastVal; h++)
+                                {
+                                    byte[] hBytes = new byte[]
+                                    {
+                                        (byte)((h >> 24) & 0xFF),
+                                        (byte)((h >> 16) & 0xFF),
+                                        (byte)((h >> 8) & 0xFF),
+                                        (byte)(h & 0xFF)
+                                    };
+                                    result.Add(new IPAddress(hBytes));
+                                }
+                            }
+                            else if (hostCount > 512)
+                            {
+                                byte b0 = ipBytes[0];
+                                byte b1 = ipBytes[1];
+                                byte b2 = ipBytes[2];
+                                for (int i = 1; i <= 254; i++)
+                                {
+                                    result.Add(new IPAddress(new byte[] { b0, b1, b2, (byte)i }));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        return result.Distinct().ToList();
+    }
+
     public async Task BroadcastBeaconNowAsync(string? teacherName = null, string? roomName = null)
     {
         if (!IsRunning || _udpClient == null) return;
 
         try
         {
-            var targetEndpoint = new IPEndPoint(IPAddress.Broadcast, NetworkConfig.DefaultDiscoveryPort);
             var beacon = new DiscoveryBeaconPacket
             {
                 TeacherName = teacherName ?? _currentTeacherName,
@@ -60,7 +156,15 @@ public class TeacherDiscoveryService : IDisposable
             };
 
             byte[] packetBytes = PacketSerializer.Serialize(CommandType.DiscoveryBeacon, beacon);
-            await _udpClient.SendAsync(packetBytes, packetBytes.Length, targetEndpoint);
+            var broadcastAddresses = GetAllBroadcastAddresses();
+            foreach (var addr in broadcastAddresses)
+            {
+                try
+                {
+                    await _udpClient.SendAsync(packetBytes, packetBytes.Length, new IPEndPoint(addr, NetworkConfig.DefaultDiscoveryPort));
+                }
+                catch { }
+            }
         }
         catch
         {
@@ -68,10 +172,82 @@ public class TeacherDiscoveryService : IDisposable
         }
     }
 
+    public async Task<bool> SendBeaconToIpAsync(IPAddress targetIp, int port = NetworkConfig.DefaultDiscoveryPort)
+    {
+        if (!IsRunning || _udpClient == null) return false;
+
+        try
+        {
+            var beacon = new DiscoveryBeaconPacket
+            {
+                TeacherName = _currentTeacherName,
+                RoomName = _currentRoomName,
+                TeacherPort = _localListeningPort,
+                ScreenIntervalSeconds = ScreenIntervalSeconds,
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            };
+
+            byte[] packetBytes = PacketSerializer.Serialize(CommandType.DiscoveryBeacon, beacon);
+            int sent = await _udpClient.SendAsync(packetBytes, packetBytes.Length, new IPEndPoint(targetIp, port));
+            return sent > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task ScanIpsAsync(IEnumerable<IPAddress> ips, CancellationToken ct = default, Action<int, int>? onProgress = null)
+    {
+        if (!IsRunning || _udpClient == null) return;
+
+        var ipList = ips.Distinct().ToList();
+        if (ipList.Count == 0) return;
+
+        var beacon = new DiscoveryBeaconPacket
+        {
+            TeacherName = _currentTeacherName,
+            RoomName = _currentRoomName,
+            TeacherPort = _localListeningPort,
+            ScreenIntervalSeconds = ScreenIntervalSeconds,
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+        };
+        byte[] packetBytes = PacketSerializer.Serialize(CommandType.DiscoveryBeacon, beacon);
+
+        // Phát 2 đợt để đảm bảo không bị rớt gói UDP trên mạng LAN / Wi-Fi
+        for (int pass = 0; pass < 2; pass++)
+        {
+            if (ct.IsCancellationRequested) break;
+            int sent = 0;
+            foreach (var chunk in ipList.Chunk(25))
+            {
+                if (ct.IsCancellationRequested) break;
+                var tasks = chunk.Select(ip =>
+                {
+                    try
+                    {
+                        return _udpClient.SendAsync(packetBytes, packetBytes.Length, new IPEndPoint(ip, NetworkConfig.DefaultDiscoveryPort));
+                    }
+                    catch
+                    {
+                        return Task.FromResult(0);
+                    }
+                });
+
+                await Task.WhenAll(tasks);
+                sent += chunk.Length;
+                if (pass == 0)
+                {
+                    onProgress?.Invoke(sent, ipList.Count);
+                }
+                await Task.Delay(15, ct);
+            }
+            await Task.Delay(200, ct);
+        }
+    }
+
     private async Task BroadcastBeaconLoopAsync(string teacherName, string roomName, int intervalMs, CancellationToken ct)
     {
-        var targetEndpoint = new IPEndPoint(IPAddress.Broadcast, NetworkConfig.DefaultDiscoveryPort);
-
         while (!ct.IsCancellationRequested)
         {
             try
@@ -88,7 +264,15 @@ public class TeacherDiscoveryService : IDisposable
                 byte[] packetBytes = PacketSerializer.Serialize(CommandType.DiscoveryBeacon, beacon);
                 if (_udpClient != null)
                 {
-                    await _udpClient.SendAsync(packetBytes, packetBytes.Length, targetEndpoint);
+                    var broadcastAddresses = GetAllBroadcastAddresses();
+                    foreach (var addr in broadcastAddresses)
+                    {
+                        try
+                        {
+                            await _udpClient.SendAsync(packetBytes, packetBytes.Length, new IPEndPoint(addr, NetworkConfig.DefaultDiscoveryPort));
+                        }
+                        catch { }
+                    }
                 }
             }
             catch (Exception) when (ct.IsCancellationRequested)
