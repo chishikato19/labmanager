@@ -11,6 +11,7 @@ public enum CommandType : ushort
     ScreenFrame = 200,
     BroadcastStream = 201,
     BroadcastControl = 202,
+    ScreenIntervalConfig = 203,
 
     // Kiểm soát thiết bị & Nguồn
     LockControl = 300,

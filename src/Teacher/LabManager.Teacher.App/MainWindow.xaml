@@ -327,18 +327,54 @@
                         </TextBlock>
                     </Border>
 
-                    <TextBlock Text="💡 Chọn từng máy qua ô tích hoặc nhấp đúp để điều khiển từ xa (UltraViewer)" 
+                    <TextBlock Text="💡 Quét chuột để chọn nhiều máy • Giữ Ctrl+Lăn chuột để phóng to/thu nhỏ" 
                                Foreground="#64748B" FontSize="11" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Right: Online Filter & Sorting Options -->
+                <!-- Right: Online Filter, Screen Interval & Sorting Options -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <CheckBox IsChecked="{Binding ShowOnlyOnline}" VerticalAlignment="Center" Margin="0,0,20,0" Cursor="Hand">
+                    <!-- Zoom Slider & Presets -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="🔍 Cỡ thẻ:" Foreground="#64748B" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"
+                                   ToolTip="Kích thước hiển thị màn hình học sinh (hoặc giữ Ctrl + lăn chuột)"/>
+                        <Button Content="S" Command="{Binding SetCardWidthCommand}" CommandParameter="190"
+                                ToolTip="Kích thước nhỏ (190px)"
+                                Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" Foreground="#475569" FontSize="10" FontWeight="Bold" Padding="6,2" Margin="0,0,2,0" Cursor="Hand">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="3"/></Style></Button.Resources>
+                        </Button>
+                        <Button Content="M" Command="{Binding SetCardWidthCommand}" CommandParameter="265"
+                                ToolTip="Kích thước vừa - Mặc định (265px)"
+                                Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" Foreground="#475569" FontSize="10" FontWeight="Bold" Padding="6,2" Margin="0,0,2,0" Cursor="Hand">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="3"/></Style></Button.Resources>
+                        </Button>
+                        <Button Content="L" Command="{Binding SetCardWidthCommand}" CommandParameter="380"
+                                ToolTip="Kích thước lớn (380px)"
+                                Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" Foreground="#475569" FontSize="10" FontWeight="Bold" Padding="6,2" Margin="0,0,4,0" Cursor="Hand">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="3"/></Style></Button.Resources>
+                        </Button>
+                        
+                        <Slider Minimum="180" Maximum="450" Value="{Binding CardWidth}" Width="95" 
+                                SmallChange="10" LargeChange="30"
+                                VerticalAlignment="Center" Cursor="Hand"
+                                ToolTip="{Binding CardWidth, StringFormat='Kích thước thẻ: {0:F0}px (hoặc giữ Ctrl + lăn chuột)'}"/>
+                        <TextBlock Text="{Binding CardWidth, StringFormat='{}{0:F0}px'}" 
+                                   Foreground="#0284C7" FontWeight="SemiBold" FontSize="11" Width="36" TextAlignment="Right" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                    </StackPanel>
+
+                    <TextBlock Text="⏱️ Chu kỳ gửi ảnh:" Foreground="#64748B" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"
+                               ToolTip="Chu kỳ học sinh chụp và gửi hình ảnh màn hình về máy giáo viên"/>
+                    <ComboBox ItemsSource="{Binding ScreenIntervalOptions}"
+                              SelectedItem="{Binding SelectedScreenInterval}"
+                              DisplayMemberPath="DisplayName"
+                              Width="145" Height="26" FontSize="11" VerticalAlignment="Center" Margin="0,0,16,0"
+                              ToolTip="Tùy chỉnh thời gian giữa các lần máy học sinh gửi màn hình lên máy giáo viên (3s, 5s hoặc hơn để tiết kiệm mạng)"/>
+
+                    <CheckBox IsChecked="{Binding ShowOnlyOnline}" VerticalAlignment="Center" Margin="0,0,16,0" Cursor="Hand">
                         <TextBlock Text="🟢 Chỉ hiện máy Online" Foreground="#1E293B" FontSize="12" FontWeight="SemiBold"/>
                     </CheckBox>
 
-                    <TextBlock Text="Sắp xếp:" Foreground="#64748B" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ComboBox SelectedIndex="{Binding SelectedSortIndex}" Width="155" Height="26" FontSize="11" VerticalAlignment="Center">
+                    <TextBlock Text="Sắp xếp:" Foreground="#64748B" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox SelectedIndex="{Binding SelectedSortIndex}" Width="150" Height="26" FontSize="11" VerticalAlignment="Center">
                         <ComboBoxItem Content="Tên máy (A - Z)" />
                         <ComboBoxItem Content="Tên máy (Z - A)" />
                         <ComboBoxItem Content="Địa chỉ IP" />
@@ -349,10 +385,17 @@
         </Border>
 
         <!-- MAIN CONTENT: STUDENT GRID -->
-        <ScrollViewer Grid.Row="2" Background="#F1F5F9" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="15">
+        <ScrollViewer x:Name="StudentScrollViewer" Grid.Row="2" Background="#F1F5F9" 
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="15"
+                      PreviewMouseWheel="StudentScrollViewer_PreviewMouseWheel"
+                      MouseLeftButtonDown="StudentScrollViewer_MouseLeftButtonDown"
+                      MouseMove="StudentScrollViewer_MouseMove"
+                      MouseLeftButtonUp="StudentScrollViewer_MouseLeftButtonUp"
+                      MouseLeave="StudentScrollViewer_MouseLeave"
+                      LostMouseCapture="StudentScrollViewer_LostMouseCapture">
             <StackPanel>
                 <!-- Active Collection Banner -->
-                <Border Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1.5" CornerRadius="8"
+                <Border x:Name="CollectionBannerBorder" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1.5" CornerRadius="8"
                         Padding="14,10" Margin="0,0,0,12"
                         Visibility="{Binding IsCollectingFiles, Converter={StaticResource BoolToVisConverter}}">
                     <Grid>
@@ -383,19 +426,23 @@
                     </Grid>
                 </Border>
 
-                <ItemsControl ItemsSource="{Binding DisplayedStudents}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Width="265" Height="215" Margin="8" 
-                                CornerRadius="10" Background="#FFFFFF"
-                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
-                                MouseEnter="StudentCard_MouseEnter"
-                                MouseLeave="StudentCard_MouseLeave">
+                <!-- Cards Container with Selection Overlay Canvas -->
+                <Grid x:Name="CardsContainer">
+                    <ItemsControl x:Name="StudentItemsControl" ItemsSource="{Binding DisplayedStudents}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="{Binding DataContext.CardWidth, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                    Height="{Binding DataContext.CardHeight, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                    Margin="8" 
+                                    CornerRadius="10" Background="#FFFFFF"
+                                    Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    MouseEnter="StudentCard_MouseEnter"
+                                    MouseLeave="StudentCard_MouseLeave">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="BorderBrush" Value="#CBD5E1"/>
@@ -498,7 +545,7 @@
                                         <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,6,0" Cursor="Hand"
                                                   ToolTip="Chọn / Bỏ chọn máy này"/>
                                         <TextBlock Text="{Binding MachineName}" Foreground="#0F172A" FontWeight="Bold" FontSize="13" 
-                                                   TextTrimming="CharacterEllipsis" MaxWidth="110" VerticalAlignment="Center"/>
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="180" VerticalAlignment="Center"/>
                                     </StackPanel>
 
                                     <!-- Quick Actions + Status Badge -->
@@ -618,6 +665,18 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+                    <!-- Drag-to-Select Marquee Overlay Canvas -->
+                    <Canvas x:Name="SelectionCanvas" IsHitTestVisible="False">
+                        <Rectangle x:Name="SelectionRectangle"
+                                   Visibility="Collapsed"
+                                   Fill="#250284C7"
+                                   Stroke="#0284C7"
+                                   StrokeThickness="1.5"
+                                   StrokeDashArray="3 1"
+                                   RadiusX="2" RadiusY="2" />
+                    </Canvas>
+                </Grid>
             </StackPanel>
         </ScrollViewer>
 

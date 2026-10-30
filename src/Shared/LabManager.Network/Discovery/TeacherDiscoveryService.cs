@@ -13,7 +13,11 @@ public class TeacherDiscoveryService : IDisposable
     private UdpClient? _udpClient;
     private CancellationTokenSource? _cts;
     private int _localListeningPort;
+    private string _currentTeacherName = "Teacher";
+    private string _currentRoomName = "Phòng máy";
     private bool _isDisposed;
+
+    public int ScreenIntervalSeconds { get; set; } = 3;
 
     public event Action<DiscoveryResponsePacket, string>? OnStudentDiscovered;
 
@@ -23,6 +27,8 @@ public class TeacherDiscoveryService : IDisposable
     {
         if (IsRunning) return;
 
+        _currentTeacherName = teacherName;
+        _currentRoomName = roomName;
         _cts = new CancellationTokenSource();
         _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, 0))
         {
@@ -35,6 +41,31 @@ public class TeacherDiscoveryService : IDisposable
 
         // Bắt đầu luồng phát beacon định kỳ
         _ = BroadcastBeaconLoopAsync(teacherName, roomName, broadcastIntervalMs, _cts.Token);
+    }
+
+    public async Task BroadcastBeaconNowAsync(string? teacherName = null, string? roomName = null)
+    {
+        if (!IsRunning || _udpClient == null) return;
+
+        try
+        {
+            var targetEndpoint = new IPEndPoint(IPAddress.Broadcast, NetworkConfig.DefaultDiscoveryPort);
+            var beacon = new DiscoveryBeaconPacket
+            {
+                TeacherName = teacherName ?? _currentTeacherName,
+                RoomName = roomName ?? _currentRoomName,
+                TeacherPort = _localListeningPort,
+                ScreenIntervalSeconds = ScreenIntervalSeconds,
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            };
+
+            byte[] packetBytes = PacketSerializer.Serialize(CommandType.DiscoveryBeacon, beacon);
+            await _udpClient.SendAsync(packetBytes, packetBytes.Length, targetEndpoint);
+        }
+        catch
+        {
+            // Bỏ qua lỗi tạm thời khi phát beacon tức thì
+        }
     }
 
     private async Task BroadcastBeaconLoopAsync(string teacherName, string roomName, int intervalMs, CancellationToken ct)
@@ -50,6 +81,7 @@ public class TeacherDiscoveryService : IDisposable
                     TeacherName = teacherName,
                     RoomName = roomName,
                     TeacherPort = _localListeningPort,
+                    ScreenIntervalSeconds = ScreenIntervalSeconds,
                     Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                 };
 

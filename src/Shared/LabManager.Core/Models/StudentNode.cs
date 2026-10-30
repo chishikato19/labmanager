@@ -11,6 +11,6 @@ public class StudentNode
     public string MacAddress { get; set; } = string.Empty;
     public int CommandPort { get; set; }
     public MachineStatus Status { get; set; } = MachineStatus.Online;
-    public string AppVersion { get; set; } = "1.3.4";
+    public string AppVersion { get; set; } = "1.3.5";
     public DateTime LastSeen { get; set; } = DateTime.UtcNow;
 }

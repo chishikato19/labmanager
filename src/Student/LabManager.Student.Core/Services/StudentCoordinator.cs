@@ -86,11 +86,14 @@ public class StudentCoordinator : IDisposable
         {
             OnConnectedToTeacher?.Invoke(beacon.TeacherName, teacherIp);
 
+            int intervalSeconds = beacon.ScreenIntervalSeconds > 0 ? beacon.ScreenIntervalSeconds : 3;
+            _screenSender.SetIntervalSeconds(intervalSeconds);
+
             // Tự động kích hoạt stream màn hình về máy giáo viên
             if (_currentTeacherIp != teacherIp || !_screenSender.IsStreaming)
             {
                 _currentTeacherIp = teacherIp;
-                _screenSender.Start(teacherIp, NetworkConfig.DefaultStreamPort, targetFps: 2);
+                _screenSender.Start(teacherIp, NetworkConfig.DefaultStreamPort, intervalSeconds);
             }
         };
 
@@ -279,6 +282,15 @@ public class StudentCoordinator : IDisposable
             {
                 return _driveSecurityHandler.HandleAsync(driveCmd);
             }
+        }
+        else if (header.Type == CommandType.ScreenIntervalConfig)
+        {
+            var intervalCmd = PacketSerializer.DeserializePayload<ScreenIntervalConfigPacket>(payload, 0, payload.Length);
+            if (intervalCmd != null && intervalCmd.IntervalSeconds > 0)
+            {
+                _screenSender.SetIntervalSeconds(intervalCmd.IntervalSeconds);
+            }
+            return Task.CompletedTask;
         }
 
         return Task.CompletedTask;

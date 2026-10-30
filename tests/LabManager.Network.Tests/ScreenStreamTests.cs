@@ -88,4 +88,32 @@ public class ScreenStreamTests
         Assert.True(receivedPacket.Height >= 720, $"Expected Height >= 720, got {receivedPacket.Height}");
         Assert.True(receivedPacket.ImageBytes.Length > 0);
     }
+
+    [Fact]
+    public void ScreenIntervalConfig_Serialization_WorksCorrectly()
+    {
+        var packet = new ScreenIntervalConfigPacket { IntervalSeconds = 5 };
+        byte[] bytes = LabManager.Protocol.Serializer.PacketSerializer.Serialize(LabManager.Core.Enums.CommandType.ScreenIntervalConfig, packet);
+
+        Assert.True(LabManager.Protocol.Serializer.PacketSerializer.TryDeserializeHeader(bytes, out var header));
+        Assert.Equal(LabManager.Core.Enums.CommandType.ScreenIntervalConfig, header.Type);
+
+        var deserialized = LabManager.Protocol.Serializer.PacketSerializer.DeserializePayload<ScreenIntervalConfigPacket>(
+            bytes, LabManager.Protocol.PacketHeader.HeaderSize, header.PayloadLength);
+
+        Assert.NotNull(deserialized);
+        Assert.Equal(5, deserialized.IntervalSeconds);
+    }
+
+    [Fact]
+    public void StudentScreenSender_SetIntervalSeconds_UpdatesWithoutError()
+    {
+        using var capturer = new GdiScreenCapturer();
+        using var sender = new StudentScreenSender(capturer, machineId: "test-machine");
+
+        // Should accept initial values and dynamic updates cleanly
+        sender.SetIntervalSeconds(3);
+        sender.SetIntervalSeconds(5);
+        sender.SetIntervalSeconds(10);
+    }
 }

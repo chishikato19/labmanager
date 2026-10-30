@@ -64,7 +64,19 @@ public class ClassroomManager : IDisposable
     public event Action<ChatMessagePacket, string>? OnChatMessageReceived;
     public event Action<DeploySoftwareStatusPacket, string>? OnDeploySoftwareStatusReceived;
 
-    public TimeSpan OfflineThreshold { get; set; } = TimeSpan.FromSeconds(10);
+    private int _screenIntervalSeconds = 3;
+    public int ScreenIntervalSeconds
+    {
+        get => _screenIntervalSeconds;
+        set
+        {
+            _screenIntervalSeconds = value;
+            _discoveryService.ScreenIntervalSeconds = value;
+            OfflineThreshold = TimeSpan.FromSeconds(Math.Max(15, value * 3));
+        }
+    }
+
+    public TimeSpan OfflineThreshold { get; set; } = TimeSpan.FromSeconds(15);
 
     public ClassroomManager()
     {
@@ -84,6 +96,7 @@ public class ClassroomManager : IDisposable
 
     public void StartDiscovery(string teacherName = "Teacher", string roomName = "Phòng máy")
     {
+        _discoveryService.ScreenIntervalSeconds = _screenIntervalSeconds;
         _discoveryService.Start(teacherName, roomName);
         _screenReceiver.Start();
         _eventListener.Start(NetworkConfig.DefaultEventPort);
@@ -99,6 +112,20 @@ public class ClassroomManager : IDisposable
     public IReadOnlyCollection<StudentNode> GetAllStudents()
     {
         return _students.Values.ToList().AsReadOnly();
+    }
+
+    public async Task SetScreenIntervalAllAsync(int seconds)
+    {
+        ScreenIntervalSeconds = seconds;
+        _ = _discoveryService.BroadcastBeaconNowAsync();
+
+        var packet = new ScreenIntervalConfigPacket { IntervalSeconds = seconds };
+        byte[] bytes = PacketSerializer.Serialize(CommandType.ScreenIntervalConfig, packet);
+        var onlineIps = _students.Values
+            .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
+            .Select(s => s.IpAddress);
+
+        await _commandSender.SendToMultipleAsync(onlineIps, bytes);
     }
 
     public async Task<bool> SendLockCommandAsync(string studentIp, bool lockScreen, bool blockInput, string message = "Máy tính đang bị khóa bởi giáo viên.")

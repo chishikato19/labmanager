@@ -24,9 +24,25 @@ public class DashboardViewModel : ViewModelBase, IDisposable
     private bool _showOnlyOnline;
     private int _selectedSortIndex;
     private bool _isDisposed;
+    private double _cardWidth = 265;
 
     public ObservableCollection<StudentCardViewModel> Students { get; } = new();
     public ICollectionView DisplayedStudents { get; }
+
+    public double CardWidth
+    {
+        get => _cardWidth;
+        set
+        {
+            double clamped = Math.Clamp(value, 180, 480);
+            if (SetProperty(ref _cardWidth, clamped))
+            {
+                OnPropertyChanged(nameof(CardHeight));
+            }
+        }
+    }
+
+    public double CardHeight => Math.Round(_cardWidth * 0.81);
 
     public string TeacherName
     {
@@ -91,6 +107,36 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public ObservableCollection<ScreenIntervalOption> ScreenIntervalOptions { get; } = new()
+    {
+        new ScreenIntervalOption(1, "1 giây (Nhanh)"),
+        new ScreenIntervalOption(2, "2 giây"),
+        new ScreenIntervalOption(3, "3 giây (Khuyên dùng)"),
+        new ScreenIntervalOption(5, "5 giây (Tiết kiệm)"),
+        new ScreenIntervalOption(10, "10 giây"),
+        new ScreenIntervalOption(15, "15 giây"),
+        new ScreenIntervalOption(30, "30 giây")
+    };
+
+    private ScreenIntervalOption? _selectedScreenInterval;
+    public ScreenIntervalOption? SelectedScreenInterval
+    {
+        get => _selectedScreenInterval;
+        set
+        {
+            if (SetProperty(ref _selectedScreenInterval, value) && value != null)
+            {
+                _ = ApplyScreenIntervalAsync(value.Seconds);
+            }
+        }
+    }
+
+    private async Task ApplyScreenIntervalAsync(int seconds)
+    {
+        await _classroomManager.SetScreenIntervalAllAsync(seconds);
+        StatusMessage = $"Đã cập nhật chu kỳ gửi ảnh màn hình học sinh: {seconds} giây/lần.";
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -151,6 +197,7 @@ public class DashboardViewModel : ViewModelBase, IDisposable
     public RelayCommand OpenStudentChatCommand { get; }
     public RelayCommand SelectAllCommand { get; }
     public RelayCommand DeselectAllCommand { get; }
+    public RelayCommand SetCardWidthCommand { get; }
     public RelayCommand ToggleSelectStudentCommand { get; }
     public RelayCommand StartRemoteControlCommand { get; }
     public RelayCommand BroadcastStudentCommand { get; }
@@ -207,6 +254,13 @@ public class DashboardViewModel : ViewModelBase, IDisposable
 
         SelectAllCommand = new RelayCommand(SelectAll);
         DeselectAllCommand = new RelayCommand(DeselectAll);
+        SetCardWidthCommand = new RelayCommand(param =>
+        {
+            if (param != null && double.TryParse(param.ToString(), out double w))
+            {
+                CardWidth = w;
+            }
+        });
         ToggleSelectStudentCommand = new RelayCommand(param => ToggleSelectStudent(param as StudentCardViewModel));
         StartRemoteControlCommand = new RelayCommand(param => StartRemoteControl(param as StudentCardViewModel));
         MoveStudentLeftCommand = new RelayCommand(param => MoveStudent(param as StudentCardViewModel, -1));
@@ -287,10 +341,12 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         _classroomManager.OnStudentOffline += OnStudentOffline;
         _classroomManager.OnScreenFrameReceived += OnScreenFrameReceived;
 
+        _selectedScreenInterval = ScreenIntervalOptions.FirstOrDefault(o => o.Seconds == 3) ?? ScreenIntervalOptions[2];
+        _classroomManager.ScreenIntervalSeconds = _selectedScreenInterval.Seconds;
         _classroomManager.StartDiscovery(_teacherName, _roomName);
     }
 
-    private void SelectAll()
+    public void SelectAll()
     {
         foreach (var s in Students)
         {
@@ -300,7 +356,7 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         NotifySelection();
     }
 
-    private void DeselectAll()
+    public void DeselectAll()
     {
         foreach (var s in Students)
             s.IsSelected = false;
@@ -1059,3 +1115,5 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         _classroomManager.Dispose();
     }
 }
+
+public record ScreenIntervalOption(int Seconds, string DisplayName);

@@ -19,6 +19,7 @@ public class StudentScreenSender : IDisposable
     private volatile bool _isFocusMode;
     private long _lastFocusPingTime;
     private string? _currentTargetIp;
+    private volatile int _baseIntervalMs = 3000;
     private bool _isDisposed;
 
     public bool IsStreaming => _cts is { IsCancellationRequested: false };
@@ -30,8 +31,17 @@ public class StudentScreenSender : IDisposable
         _machineGuid = Guid.TryParse(machineId, out var g) ? g : Guid.NewGuid();
     }
 
-    public void Start(string teacherIp, int streamPort = NetworkConfig.DefaultStreamPort, int targetFps = 2)
+    public void Start(string teacherIp, int streamPort = NetworkConfig.DefaultStreamPort, int intervalSeconds = 3, int? targetFps = null)
     {
+        if (targetFps.HasValue && targetFps.Value > 0)
+        {
+            _baseIntervalMs = Math.Max(100, 1000 / targetFps.Value);
+        }
+        else if (intervalSeconds > 0)
+        {
+            _baseIntervalMs = intervalSeconds * 1000;
+        }
+
         if (IsStreaming && _currentTargetIp == teacherIp) return;
 
         Stop();
@@ -44,9 +54,16 @@ public class StudentScreenSender : IDisposable
             return;
 
         var targetEndpoint = new IPEndPoint(ip, streamPort);
-        int baseIntervalMs = Math.Max(300, 1000 / Math.Max(1, targetFps));
 
-        _ = StreamLoopAsync(targetEndpoint, baseIntervalMs, _cts.Token);
+        _ = StreamLoopAsync(targetEndpoint, _cts.Token);
+    }
+
+    public void SetIntervalSeconds(int intervalSeconds)
+    {
+        if (intervalSeconds > 0)
+        {
+            _baseIntervalMs = intervalSeconds * 1000;
+        }
     }
 
     public void SetRemoteControlMode(bool active)
@@ -63,7 +80,7 @@ public class StudentScreenSender : IDisposable
         }
     }
 
-    private async Task StreamLoopAsync(IPEndPoint targetEndpoint, int baseIntervalMs, CancellationToken ct)
+    private async Task StreamLoopAsync(IPEndPoint targetEndpoint, CancellationToken ct)
     {
         while (!ct.IsCancellationRequested && _udpClient != null)
         {
@@ -79,11 +96,11 @@ public class StudentScreenSender : IDisposable
 
                 // Khi giáo viên chỉ chuột vào màn hình học sinh hoặc đang Điều khiển từ xa:
                 // Độ phân giải GỐC / Native (targetWidth = null để ảnh cực nét, không resize, đọc rõ từng chữ/dòng code), chất lượng 88%, 20 FPS (50ms)
-                // Khi ở chế độ giám sát ngầm: 640x360, chất lượng 60%, 2 FPS (500ms) để tối ưu băng thông phòng máy
+                // Khi ở chế độ giám sát ngầm: 640x360, chất lượng 60%, chu kỳ tùy chỉnh (3s, 5s hoặc hơn) để tối ưu băng thông phòng máy
                 int? targetW = isHighDef ? null : 640;
                 int? targetH = isHighDef ? null : 360;
                 int quality = isHighDef ? 88 : 60;
-                int sleepMs = isHighDef ? 50 : baseIntervalMs;
+                int sleepMs = isHighDef ? 50 : _baseIntervalMs;
 
                 byte[]? jpegBytes = _capturer.CaptureFrameJpeg(quality: quality, targetWidth: targetW, targetHeight: targetH);
                 if (jpegBytes != null && jpegBytes.Length > 0)
@@ -109,7 +126,22 @@ public class StudentScreenSender : IDisposable
                     }
                 }
 
-                await Task.Delay(sleepMs, ct);
+                if (isHighDef)
+                {
+                    await Task.Delay(sleepMs, ct);
+                }
+                else
+                {
+                    // Ngủ theo chu kỳ tùy chỉnh (3s, 5s hoặc hơn).
+                    // Chia nhỏ từng nhịp 200ms để phản hồi ngay lập tức nếu đổi cấu hình hoặc có hover/remote control
+                    int elapsed = 0;
+                    while (elapsed < _baseIntervalMs && !_isFocusMode && !_isRemoteControlMode && !ct.IsCancellationRequested)
+                    {
+                        int step = Math.Min(200, _baseIntervalMs - elapsed);
+                        await Task.Delay(step, ct);
+                        elapsed += step;
+                    }
+                }
             }
             catch (Exception) when (ct.IsCancellationRequested)
             {
