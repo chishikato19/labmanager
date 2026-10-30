@@ -1,0 +1,90 @@
+<Window x:Class="LabManager.Teacher.App.Views.CleanAndInitDriveWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dọn dẹp &amp; Khởi tạo ổ đĩa học sinh" Height="580" Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="#F8FAFC" Foreground="#1E293B"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="🧹 DỌN DẸP &amp; KHỞI TẠO Ổ ĐĨA HỌC SINH" FontSize="16" FontWeight="Bold" Foreground="#DC2626"/>
+                <TextBlock Text="Xóa dữ liệu bài tập cũ của năm ngoái và tạo sẵn các thư mục lớp mới."
+                           Foreground="#64748B" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+            <Border Grid.Column="1" Background="#FEF2F2" BorderBrush="#DC2626" BorderThickness="1" CornerRadius="12" Padding="10,4" VerticalAlignment="Center">
+                <TextBlock Text="{Binding TargetDescription}" Foreground="#DC2626" FontSize="11" FontWeight="SemiBold"/>
+            </Border>
+        </Grid>
+
+        <!-- Drive Letter Setting -->
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Ổ đĩa mục tiêu:" Foreground="#1E293B" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Width="120">
+                <TextBox Text="{Binding DriveLetter, UpdateSourceTrigger=PropertyChanged}"
+                         Background="Transparent" Foreground="#0F172A" BorderThickness="0"
+                         FontSize="13" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
+
+        <!-- Folder List Input -->
+        <Grid Grid.Row="2" Margin="0,0,0,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                <TextBlock Text="Danh sách thư mục mới cần tạo (mỗi dòng một tên):" Foreground="#1E293B" FontSize="12" FontWeight="SemiBold"/>
+                <TextBlock Text="Ví dụ: 10A1, 10A2, 10A3 hoặc tên các nhóm học sinh." Foreground="#64748B" FontSize="11"/>
+            </StackPanel>
+            <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="8" Padding="8">
+                <TextBox Text="{Binding FolderListText, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         Background="Transparent" Foreground="#0F172A" BorderThickness="0"
+                         FontSize="13" FontFamily="Segoe UI" Padding="4"/>
+            </Border>
+        </Grid>
+
+        <!-- Safety Confirmation Box -->
+        <Border Grid.Row="3" Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
+            <CheckBox IsChecked="{Binding IsConfirmed}" Cursor="Hand" VerticalAlignment="Center">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Xác nhận xóa vĩnh viễn bài làm cũ" Foreground="#991B1B" FontSize="12" FontWeight="Bold"/>
+                    <TextBlock Text="Toàn bộ tệp tin &amp; thư mục hiện có trên ổ đĩa này (ngoại trừ các thư mục hệ thống Windows) sẽ bị xóa sạch." 
+                               Foreground="#B91C1C" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+            </CheckBox>
+        </Border>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Hủy bỏ" Command="{Binding CancelCommand}"
+                    Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1" Foreground="#475569" FontWeight="SemiBold"
+                    Padding="16,8" Margin="0,0,10,0" Cursor="Hand" FontSize="12">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
+            <Button Content="⚠️ Bắt đầu dọn dẹp &amp; Tạo thư mục" Command="{Binding SendCommand}"
+                    Background="#DC2626" Foreground="White" FontWeight="Bold"
+                    Padding="18,8" Cursor="Hand" BorderThickness="0" FontSize="12">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

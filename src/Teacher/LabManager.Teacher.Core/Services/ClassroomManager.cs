@@ -540,6 +540,25 @@ public class ClassroomManager : IDisposable
         await SendLaunchAppToTargetsAsync(onlineIps, appNameOrPath, arguments);
     }
 
+    public async Task SendCleanAndInitDriveToTargetsAsync(IEnumerable<string> targetIps, string driveLetter, List<string> folderNames)
+    {
+        var packet = new CleanAndInitDrivePacket
+        {
+            DriveLetter = driveLetter,
+            FolderNames = folderNames
+        };
+        byte[] bytes = PacketSerializer.Serialize(CommandType.CleanAndInitDrive, packet);
+        await _commandSender.SendToMultipleAsync(targetIps, bytes);
+    }
+
+    public async Task SendCleanAndInitDriveAllAsync(string driveLetter, List<string> folderNames)
+    {
+        var onlineIps = _students.Values
+            .Where(s => s.Status != MachineStatus.Offline && !string.IsNullOrWhiteSpace(s.IpAddress))
+            .Select(s => s.IpAddress.StartsWith("::ffff:") ? s.IpAddress[7..] : s.IpAddress);
+        await SendCleanAndInitDriveToTargetsAsync(onlineIps, driveLetter, folderNames);
+    }
+
     public async Task<bool> RequestWebActivityAsync(string studentIp)
     {
         var packet = new WebFilterControlPacket

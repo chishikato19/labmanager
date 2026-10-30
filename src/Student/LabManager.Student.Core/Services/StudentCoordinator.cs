@@ -30,6 +30,7 @@ public class StudentCoordinator : IDisposable
     private readonly WallpaperHandler _wallpaperHandler = new();
     private readonly DeploySoftwareHandler _deployHandler = new();
     private readonly DriveSecurityHandler _driveSecurityHandler = new();
+    private readonly CleanAndInitDriveHandler _cleanAndInitDriveHandler = new();
     private readonly string _machineId = Guid.NewGuid().ToString("N");
     private string? _currentTeacherIp;
     private bool _isDisposed;
@@ -281,6 +282,14 @@ public class StudentCoordinator : IDisposable
             if (driveCmd != null)
             {
                 return _driveSecurityHandler.HandleAsync(driveCmd);
+            }
+        }
+        else if (header.Type == CommandType.CleanAndInitDrive)
+        {
+            var cleanCmd = PacketSerializer.DeserializePayload<CleanAndInitDrivePacket>(payload, 0, payload.Length);
+            if (cleanCmd != null)
+            {
+                return _cleanAndInitDriveHandler.HandleAsync(cleanCmd);
             }
         }
         else if (header.Type == CommandType.ScreenIntervalConfig)

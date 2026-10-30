@@ -192,6 +192,11 @@
                                           Command="{Binding PlacementTarget.Tag.UnlockDriveDCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           ToolTip="Mở khóa ổ D để trả lại quyền bình thường cho học sinh"
                                           Foreground="#047857"/>
+                                <Separator/>
+                                <MenuItem Header="🧹 Dọn dẹp &amp; Khởi tạo ổ D (Năm học mới)..."
+                                          Command="{Binding PlacementTarget.Tag.CleanAndInitDriveCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          ToolTip="Xóa sạch toàn bộ bài làm cũ của học sinh trên ổ D và tạo danh sách thư mục lớp mới"
+                                          Foreground="#DC2626"/>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
@@ -533,6 +538,9 @@
                                      <MenuItem Header="🔓 Mở khóa ổ D máy này" 
                                                Command="{Binding PlacementTarget.Tag.UnlockStudentDriveDCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                CommandParameter="{Binding}" Foreground="#059669"/>
+                                     <MenuItem Header="🧹 Dọn dẹp &amp; Khởi tạo ổ D máy này..." 
+                                               Command="{Binding PlacementTarget.Tag.CleanAndInitStudentDriveCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                               CommandParameter="{Binding}" Foreground="#DC2626"/>
                                     <Separator/>
                                     <MenuItem Header="◀ Chuyển vị trí sang trái" 
                                               Command="{Binding PlacementTarget.Tag.MoveStudentLeftCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -614,10 +622,23 @@
                                 </Grid>
 
                                 <!-- Screen Preview with Hover Zoom Tooltip -->
-                                <Border Grid.Row="1" Background="#0F172A" CornerRadius="6" BorderBrush="#CBD5E1" BorderThickness="1" ClipToBounds="True"
+                                <Border Grid.Row="1" CornerRadius="6" ClipToBounds="True"
                                         MouseEnter="StudentCard_MouseEnter"
                                         MouseLeave="StudentCard_MouseLeave"
                                         ToolTipService.InitialShowDelay="150" ToolTipService.BetweenShowDelay="50" ToolTipService.ShowDuration="30000" Cursor="Hand">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#0F172A"/>
+                                            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                    <Setter Property="Background" Value="#000000"/>
+                                                    <Setter Property="BorderBrush" Value="#1E293B"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                     <Border.ToolTip>
                                         <ToolTip Background="#FFFFFF" BorderBrush="#0284C7" BorderThickness="2" Padding="14">
                                             <StackPanel Width="780">
@@ -628,18 +649,61 @@
                                                         <TextBlock Text="{Binding AppVersion, StringFormat=' (v{0})'}" Foreground="#7C3AED" FontSize="12" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                                     </StackPanel>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                        <Border Background="#DC2626" CornerRadius="4" Padding="7,2" Margin="0,0,10,0">
-                                                            <TextBlock Text="🔴 TRỰC TIẾP (LIVE HD)" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                                        <Border CornerRadius="4" Padding="7,2" Margin="0,0,10,0">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="#DC2626"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                                            <Setter Property="Background" Value="#64748B"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock FontSize="11" FontWeight="Bold" Foreground="White">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Text" Value="🔴 TRỰC TIẾP (LIVE HD)"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                                                <Setter Property="Text" Value="⚫ NGOẠI TUYẾN"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
                                                         </Border>
                                                         <TextBlock Text="{Binding IpAddress, StringFormat='IP: {0}'}" Foreground="#0284C7" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Grid>
-                                                <Border Background="#020617" CornerRadius="8" Height="438" ClipToBounds="True" BorderBrush="#CBD5E1" BorderThickness="1">
+                                                <Border Background="#000000" CornerRadius="8" Height="438" ClipToBounds="True" BorderBrush="#CBD5E1" BorderThickness="1">
                                                     <Grid>
-                                                        <TextBlock Text="💻 Đang truyền luồng hình ảnh trực tiếp thời gian thực..." Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                        <Image Source="{Binding ThumbnailImage}" Stretch="Uniform" 
-                                                               RenderOptions.BitmapScalingMode="HighQuality"
-                                                               SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                                                        <!-- Luồng màn hình khi Online -->
+                                                        <Grid Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisConverter}}">
+                                                            <TextBlock Text="💻 Đang truyền luồng hình ảnh trực tiếp thời gian thực..." Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Image Source="{Binding ThumbnailImage}" Stretch="Uniform" 
+                                                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                                                   SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                                                        </Grid>
+
+                                                        <!-- Màn hình đen khi Ngoại tuyến -->
+                                                        <Grid Background="#000000">
+                                                            <Grid.Style>
+                                                                <Style TargetType="Grid">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Grid.Style>
+                                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                                <TextBlock Text="⏻" FontSize="46" Foreground="#334155" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                                                <TextBlock Text="MÁY HỌC SINH ĐANG NGOẠI TUYẾN" Foreground="#64748B" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                                <TextBlock Text="Màn hình đang tắt • Không có tín hiệu truyền hình ảnh" Foreground="#475569" FontSize="12" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                                            </StackPanel>
+                                                        </Grid>
                                                     </Grid>
                                                 </Border>
                                                 <Grid Margin="0,8,0,0">
@@ -652,11 +716,32 @@
                                     </Border.ToolTip>
 
                                     <Grid>
-                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <TextBlock Text="💻" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,2"/>
-                                            <TextBlock Text="Chờ màn hình" Foreground="#94A3B8" FontSize="10" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                        <Image Source="{Binding ThumbnailImage}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <!-- Khung màn hình khi máy Online -->
+                                        <Grid Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisConverter}}">
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock Text="💻" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Chờ màn hình" Foreground="#94A3B8" FontSize="10" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                            <Image Source="{Binding ThumbnailImage}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        </Grid>
+
+                                        <!-- Màn hình đen khi máy Ngoại tuyến -->
+                                        <Grid Background="#000000">
+                                            <Grid.Style>
+                                                <Style TargetType="Grid">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Style>
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock Text="⏻" FontSize="20" Foreground="#475569" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                                <TextBlock Text="NGOẠI TUYẾN" Foreground="#64748B" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Grid>
                                     </Grid>
                                 </Border>
 

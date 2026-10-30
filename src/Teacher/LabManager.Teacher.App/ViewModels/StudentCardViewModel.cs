@@ -85,6 +85,10 @@ public class StudentCardViewModel : ViewModelBase
         {
             if (SetProperty(ref _status, value))
             {
+                if (value == MachineStatus.Offline)
+                {
+                    ThumbnailImage = null;
+                }
                 OnPropertyChanged(nameof(IsOnline));
                 OnPropertyChanged(nameof(StatusText));
                 OnPropertyChanged(nameof(StatusColor));
@@ -131,6 +135,8 @@ public class StudentCardViewModel : ViewModelBase
 
     public void UpdateThumbnail(byte[] jpegBytes)
     {
+        if (!IsOnline) return;
+
         try
         {
             using var stream = new MemoryStream(jpegBytes);

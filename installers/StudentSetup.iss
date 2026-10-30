@@ -1,6 +1,6 @@
 ; Script Inno Setup cho LabManager Student App
 #define MyAppName "LabManager Student"
-#define MyAppVersion "1.3.6"
+#define MyAppVersion "1.3.7"
 #define MyAppPublisher "LabManager Team"
 #define MyAppExeName "LabManager.Student.App.exe"
 
@@ -9,7 +9,7 @@ AppId={{9F82B743-4C3D-4D30-8902-86E5E3D291F4}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\LabManager\Student
+DefaultDirName={code:GetDefaultDir}
 DefaultGroupName={#MyAppName}
 OutputDir=..\dist
 OutputBaseFilename=LabManager_Student_Setup_v{#MyAppVersion}
@@ -37,3 +37,12 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: WizardSilent
 [UninstallRun]
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""LabManager Student"""; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""LabManager Student Out"""; Flags: runhidden
+
+[Code]
+function GetDefaultDir(Param: String): String;
+begin
+  if DirExists('D:\') then
+    Result := 'D:\LabManager\Student'
+  else
+    Result := ExpandConstant('{autopf}\LabManager\Student');
+end;

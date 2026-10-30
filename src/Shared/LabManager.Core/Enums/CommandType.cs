@@ -28,6 +28,7 @@ public enum CommandType : ushort
     DeploySoftware = 420,
     DeploySoftwareStatus = 421,
     DriveSecurityControl = 430,
+    CleanAndInitDrive = 431,
 
     // Giám sát hoạt động
     ProcessControl = 500,

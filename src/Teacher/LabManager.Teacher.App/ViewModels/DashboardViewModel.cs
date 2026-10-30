@@ -216,6 +216,8 @@ public class DashboardViewModel : ViewModelBase, IDisposable
     public RelayCommand UnlockDriveDCommand { get; }
     public RelayCommand LockStudentDriveDCommand { get; }
     public RelayCommand UnlockStudentDriveDCommand { get; }
+    public RelayCommand CleanAndInitDriveCommand { get; }
+    public RelayCommand CleanAndInitStudentDriveCommand { get; }
     public RelayCommand ScanMachinesCommand { get; }
     public RelayCommand OpenScanDialogCommand { get; }
 
@@ -294,6 +296,8 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         UnlockDriveDCommand = new RelayCommand(async () => await SetDriveSecuritySelectedOrAllAsync(DriveSecurityAction.UnlockDrive));
         LockStudentDriveDCommand = new RelayCommand(async param => await SetDriveSecurityStudentAsync(param as StudentCardViewModel, DriveSecurityAction.LockDrive));
         UnlockStudentDriveDCommand = new RelayCommand(async param => await SetDriveSecurityStudentAsync(param as StudentCardViewModel, DriveSecurityAction.UnlockDrive));
+        CleanAndInitDriveCommand = new RelayCommand(() => OpenCleanAndInitDriveDialog());
+        CleanAndInitStudentDriveCommand = new RelayCommand(param => OpenCleanAndInitDriveDialog(param as StudentCardViewModel));
         ScanMachinesCommand = new RelayCommand(async () => await ScanMachinesQuickAsync());
         OpenScanDialogCommand = new RelayCommand(OpenScanDialog);
 
@@ -1039,6 +1043,46 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         win.ShowDialog();
     }
 
+    private void OpenCleanAndInitDriveDialog(StudentCardViewModel? specificStudent = null)
+    {
+        var onlineStudents = Students.Where(s => s.IsOnline).ToList();
+        if (onlineStudents.Count == 0)
+        {
+            MessageBox.Show("Hiện không có máy học sinh nào trực tuyến để dọn dẹp ổ đĩa.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        List<StudentCardViewModel> targets;
+        bool isAll = false;
+
+        if (specificStudent != null)
+        {
+            if (!specificStudent.IsOnline)
+            {
+                MessageBox.Show($"Máy {specificStudent.MachineName} hiện đang ngoại tuyến.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            targets = [specificStudent];
+        }
+        else
+        {
+            var selected = Students.Where(s => s.IsSelected && s.IsOnline).ToList();
+            if (selected.Count > 0)
+            {
+                targets = selected;
+            }
+            else
+            {
+                targets = onlineStudents;
+                isAll = true;
+            }
+        }
+
+        var vm = new CleanAndInitDriveViewModel(_classroomManager, targets, isAll);
+        vm.OnStatusUpdated += msg => StatusMessage = msg;
+        new CleanAndInitDriveWindow(vm) { Owner = Application.Current?.MainWindow }.ShowDialog();
+    }
+
     private void OpenBroadcastChat()
     {
         if (_activeChats.TryGetValue("ALL", out _)) return;
@@ -1082,7 +1126,7 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         try
         {
             var student = Students.FirstOrDefault(s => s.Id == packet.MachineId || s.IpAddress == senderIp);
-            if (student == null) return;
+            if (student == null || !student.IsOnline) return;
 
             // Giải mã BitmapImage ngay trên luồng UDP nền để không làm nghẽn UI Thread
             using var stream = new MemoryStream(packet.ImageBytes);
@@ -1095,7 +1139,10 @@ public class DashboardViewModel : ViewModelBase, IDisposable
 
             Application.Current?.Dispatcher.InvokeAsync(() =>
             {
-                student.ThumbnailImage = bitmap;
+                if (student.IsOnline)
+                {
+                    student.ThumbnailImage = bitmap;
+                }
             }, System.Windows.Threading.DispatcherPriority.Render);
         }
         catch { }
@@ -1167,7 +1214,10 @@ public class DashboardViewModel : ViewModelBase, IDisposable
         {
             var existing = Students.FirstOrDefault(s => s.Id == node.Id);
             if (existing != null)
+            {
                 existing.Status = MachineStatus.Offline;
+                existing.ThumbnailImage = null;
+            }
             NotifyCounts();
         });
     }
