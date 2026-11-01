@@ -9,7 +9,7 @@ AppId={{9F82B743-4C3D-4D30-8902-86E5E3D291F4}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={code:GetDefaultDir}
+DefaultDirName={autopf}\LabManager\Student
 DefaultGroupName={#MyAppName}
 OutputDir=..\dist
 OutputBaseFilename=LabManager_Student_Setup_v{#MyAppVersion}
@@ -37,12 +37,3 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: WizardSilent
 [UninstallRun]
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""LabManager Student"""; Flags: runhidden
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""LabManager Student Out"""; Flags: runhidden
-
-[Code]
-function GetDefaultDir(Param: String): String;
-begin
-  if DirExists('D:\') then
-    Result := 'D:\LabManager\Student'
-  else
-    Result := ExpandConstant('{autopf}\LabManager\Student');
-end;
